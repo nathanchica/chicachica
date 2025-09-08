@@ -1,0 +1,55 @@
+{
+    "name": "chica-chica-monorepo",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "workspaces": [
+        "frontend",
+        "backend"
+    ],
+    "scripts": {
+        "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+        "dev:frontend": "npm run dev --workspace=frontend",
+        "dev:backend": "npm run dev --workspace=backend",
+        "build": "npm run build:backend && npm run build:frontend",
+        "build:frontend": "npm run build --workspace=frontend",
+        "build:backend": "npm run build --workspace=backend",
+        "start": "npm run start --workspace=backend",
+        "lint": "eslint . --fix",
+        "lint:check": "eslint .",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "typecheck": "npm run typecheck:backend && npm run typecheck:frontend",
+        "typecheck:backend": "npm run typecheck --workspace=backend",
+        "typecheck:frontend": "npm run typecheck --workspace=frontend",
+        "prepare": "husky"
+    },
+    "devDependencies": {
+        "@typescript-eslint/eslint-plugin": "^8.20.0",
+        "@typescript-eslint/parser": "^8.20.0",
+        "concurrently": "^8.2.2",
+        "eslint": "^9.17.0",
+        "eslint-config-prettier": "^9.1.0",
+        "eslint-plugin-react": "^7.37.2",
+        "eslint-plugin-react-hooks": "^5.2.0",
+        "husky": "^9.1.7",
+        "lint-staged": "^15.3.0",
+        "prettier": "^3.4.2",
+        "tsc-files": "^1.1.4",
+        "typescript": "^5.7.3"
+    },
+    "lint-staged": {
+        "**/*.{ts,tsx}": [
+            "prettier --write",
+            "eslint --fix --max-warnings=0 --no-warn-ignored",
+            "tsc-files --noEmit"
+        ],
+        "**/*.{js,jsx}": [
+            "prettier --write",
+            "eslint --fix --max-warnings=0 --no-warn-ignored"
+        ],
+        "**/*.{css,md,json,yml,yaml}": [
+            "prettier --write"
+        ]
+    }
+}
