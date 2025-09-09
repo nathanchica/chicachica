@@ -1,1 +1,9 @@
 @import 'tailwindcss';
+
+body {
+    font-family: 'Merriweather', serif;
+}
+
+h1 {
+    font-family: 'Playfair Display', serif;
+}

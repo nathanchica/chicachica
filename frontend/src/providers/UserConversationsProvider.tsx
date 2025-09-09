@@ -1,6 +1,8 @@
 import { useContext, createContext, useState, ReactNode } from 'react';
+import invariant from 'tiny-invariant';
 
 import { User, Conversation } from '../utils/types';
+import { mockConversations } from '../mocks/conversations';
 
 export type UserContextType = {
     loggedInUser: User | null;
@@ -16,9 +18,7 @@ const UserConversationsContext = createContext<UserContextType | undefined>(unde
 
 export const useUserConversations = (): UserContextType => {
     const context = useContext(UserConversationsContext);
-    if (!context) {
-        throw new Error('useUserConversations must be used within a UserConversationsProvider');
-    }
+    invariant(context, 'useUserConversations must be used within a UserConversationsProvider');
     return context;
 };
 
@@ -28,11 +28,13 @@ export const useUserConversations = (): UserContextType => {
 function UserConversationsProvider({ children }: { children: ReactNode }) {
     const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
     const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
-    const [loadedConversations, setLoadedConversations] = useState<Conversation[]>([]);
-    const [totalConversations, setTotalConversations] = useState<number>(0);
+    const [loadedConversations, setLoadedConversations] = useState<Conversation[]>(mockConversations);
+    const [totalConversations, setTotalConversations] = useState<number>(mockConversations.length);
 
     const logInUser = (user: User) => {
         setLoggedInUser(user);
+        setLoadedConversations(mockConversations);
+        setTotalConversations(mockConversations.length);
     };
 
     const logOutUser = () => {
