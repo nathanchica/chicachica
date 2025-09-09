@@ -30,7 +30,7 @@ function LoginView() {
     };
 
     const handleLogin = () => {
-        const user = fetchedUsers.find((u) => u.id === selectedUserId);
+        const user = fetchedUsers.find(({ id }) => id === selectedUserId);
         if (user) {
             logInUser(user);
         }
@@ -58,11 +58,11 @@ function LoginView() {
         <div className="min-h-screen flex items-center justify-center">
             <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-gray-800 mb-2">ChicaChica</h1>
+                    <h1 className="text-4xl font-bold text-gray-900 mb-2">ChicaChica</h1>
                     <p className="text-gray-500 text-sm italic">
-                        From the Filipino term &quot;Chika Chika&quot;
+                        From the Filipino term, &quot;Chika Chika&quot;
                         <br />
-                        It means &quot;chit-chat&quot;, gossip, or casual conversation;
+                        It means &quot;chit-chat&quot;, gossip, or casual conversation
                     </p>
                 </div>
 
