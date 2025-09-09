@@ -2,7 +2,19 @@ import { Request, Response } from 'express';
 import { UserService } from '../services/userService';
 import { UniqueConstraintError, DatabaseError } from '../db/errors';
 
+enum UserStatus {
+    ONLINE = 'online',
+    AWAY = 'away',
+    OFFLINE = 'offline',
+}
+
+const validUserStatuses = Object.values(UserStatus);
+
 const userService = new UserService();
+
+function validateUserId(id: string | undefined): boolean {
+    return !!(id && id.trim());
+}
 
 export class UserController {
     async createUser(req: Request, res: Response): Promise<void> {
@@ -40,6 +52,12 @@ export class UserController {
     async getUser(req: Request, res: Response): Promise<void> {
         try {
             const { id } = req.params;
+
+            if (!validateUserId(id)) {
+                res.status(400).json({ error: 'Valid user ID is required' });
+                return;
+            }
+
             const user = await userService.getUserById(id);
 
             if (!user) {
@@ -69,8 +87,13 @@ export class UserController {
             const { id } = req.params;
             const { status } = req.body;
 
-            if (!status || !['online', 'away', 'offline'].includes(status)) {
-                res.status(400).json({ error: 'Valid status is required (online, away, offline)' });
+            if (!validateUserId(id)) {
+                res.status(400).json({ error: 'Valid user ID is required' });
+                return;
+            }
+
+            if (!status || !validUserStatuses.includes(status)) {
+                res.status(400).json({ error: `Valid status is required (${validUserStatuses.join(', ')})` });
                 return;
             }
 
