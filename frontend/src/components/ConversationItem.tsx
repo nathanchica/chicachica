@@ -1,5 +1,5 @@
-import { Conversation } from '../utils/types';
 import { formatRelativeTime } from '../utils/formatters';
+import { Conversation } from '../utils/types';
 
 interface ConversationItemProps {
     conversation: Conversation;

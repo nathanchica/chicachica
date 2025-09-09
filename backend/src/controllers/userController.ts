@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
-import { UserService } from '../services/userService';
+
 import { UniqueConstraintError, DatabaseError } from '../db/errors';
+import { UserService } from '../services/userService';
 
 enum UserStatus {
     ONLINE = 'online',

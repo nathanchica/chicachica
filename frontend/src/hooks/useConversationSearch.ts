@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react';
+
 import Fuse from 'fuse.js';
+
 import { Conversation } from '../utils/types';
 
 export function useConversationSearch(conversations: Conversation[]) {

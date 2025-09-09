@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
+
 import Fuse from 'fuse.js';
+
 import { User } from '../utils/types';
 
 const USERS_PER_PAGE = 4;

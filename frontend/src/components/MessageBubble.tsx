@@ -1,5 +1,5 @@
-import { Message } from '../utils/types';
 import { formatTimestamp } from '../utils/formatters';
+import { Message } from '../utils/types';
 
 interface MessageBubbleProps {
     message: Message;
