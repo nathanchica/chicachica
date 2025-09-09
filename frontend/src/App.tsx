@@ -1,5 +1,5 @@
-import UserConversationsProvider from './providers/UserConversationsProvider';
 import ChicaChicaApp from './components/ChicaChicaApp';
+import UserConversationsProvider from './providers/UserConversationsProvider';
 
 function App() {
     return (

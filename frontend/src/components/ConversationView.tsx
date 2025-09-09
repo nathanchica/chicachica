@@ -1,5 +1,7 @@
 import { useState } from 'react';
+
 import MessageBubble from './MessageBubble';
+
 import { Conversation, User } from '../utils/types';
 
 type Props = {

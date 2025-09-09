@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
-import { User } from '../utils/types';
-import { useUserConversations } from '../providers/UserConversationsProvider';
-import { useUsersApi } from '../hooks/useUsersApi';
-import { useUserSearch } from '../hooks/useUserSearch';
+
 import CreateNewUserForm from './CreateNewUserForm';
+import PaginationControls from './PaginationControls';
 import SearchInput from './SearchInput';
 import UserList from './UserList';
-import PaginationControls from './PaginationControls';
 
+import { useUserSearch } from '../hooks/useUserSearch';
+import { useUsersApi } from '../hooks/useUsersApi';
 import { mockUsers } from '../mocks/conversations';
+import { useUserConversations } from '../providers/UserConversationsProvider';
+import { User } from '../utils/types';
 
 function LoginView() {
     const { logInUser } = useUserConversations();

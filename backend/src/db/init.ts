@@ -1,6 +1,7 @@
+import readline from 'readline';
+
 import { neon } from '@neondatabase/serverless';
 import dotenv from 'dotenv';
-import readline from 'readline';
 
 dotenv.config();
 

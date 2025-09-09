@@ -1,6 +1,7 @@
-import { useUserConversations } from '../providers/UserConversationsProvider';
 import LoginView from './LoginView';
 import MainView from './MainView';
+
+import { useUserConversations } from '../providers/UserConversationsProvider';
 
 function ChicaChicaApp() {
     const { loggedInUser } = useUserConversations();

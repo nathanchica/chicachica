@@ -1,10 +1,11 @@
 import invariant from 'tiny-invariant';
 
-import { useUserConversations } from '../providers/UserConversationsProvider';
-import { useConversationSearch } from '../hooks/useConversationSearch';
 import ConversationItem from './ConversationItem';
 import ConversationView from './ConversationView';
 import SearchInput from './SearchInput';
+
+import { useConversationSearch } from '../hooks/useConversationSearch';
+import { useUserConversations } from '../providers/UserConversationsProvider';
 
 function MainView() {
     const { loggedInUser, logOutUser, loadedConversations, activeConversation, viewConversation } =

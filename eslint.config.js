@@ -3,6 +3,7 @@ import tseslint from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import reactPlugin from 'eslint-plugin-react';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
+import importPlugin from 'eslint-plugin-import';
 import prettierConfig from 'eslint-config-prettier';
 
 export default [
@@ -64,6 +65,7 @@ export default [
             '@typescript-eslint': tseslint,
             react: reactPlugin,
             'react-hooks': reactHooksPlugin,
+            import: importPlugin,
         },
         rules: {
             ...tseslint.configs.recommended.rules,
@@ -90,6 +92,32 @@ export default [
             'no-console': 'off',
             'no-debugger': 'error',
             'no-unused-vars': 'off', // Handled by @typescript-eslint/no-unused-vars
+
+            // Import ordering
+            'import/order': [
+                'warn',
+                {
+                    groups: ['builtin', 'external', 'internal', 'sibling', 'parent', 'index'],
+                    'newlines-between': 'always',
+                    alphabetize: {
+                        order: 'asc',
+                        caseInsensitive: false,
+                    },
+                    pathGroups: [
+                        {
+                            pattern: 'react',
+                            group: 'external',
+                            position: 'before',
+                        },
+                        {
+                            pattern: 'react-dom/**',
+                            group: 'external',
+                            position: 'before',
+                        },
+                    ],
+                    pathGroupsExcludedImportTypes: ['react'],
+                },
+            ],
         },
         settings: {
             react: {

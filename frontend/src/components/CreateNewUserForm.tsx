@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { User } from '../utils/types';
-import { useUsersApi } from '../hooks/useUsersApi';
+
 import LoadingSpinner from './LoadingSpinner';
+
+import { useUsersApi } from '../hooks/useUsersApi';
+import { User } from '../utils/types';
 
 interface CreateNewUserFormProps {
     onUserCreated: (user: User) => void;
