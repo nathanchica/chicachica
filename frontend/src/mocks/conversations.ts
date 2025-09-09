@@ -229,7 +229,8 @@ export const mockConversations: Conversation[] = [
             id: 'msg-book-last',
             author: mockUsers[5],
             timestamp: new Date('2025-01-09T08:45:00Z'),
-            content: 'Just finished chapter 5. Grabe, plot twist!',
+            content:
+                'Just finished reading "Smaller and Smaller Circles" by F.H. Batacan. Sobrang intense ng crime thriller na ito! The way it explores social issues in Manila while maintaining the suspense is brilliant. Highly recommend to everyone!',
         },
     },
     {
