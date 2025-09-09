@@ -39,10 +39,15 @@
         "typescript": "^5.7.3"
     },
     "lint-staged": {
-        "**/*.{ts,tsx}": [
+        "frontend/**/*.{ts,tsx}": [
             "prettier --write",
             "eslint --fix --max-warnings=0 --no-warn-ignored",
-            "tsc-files --noEmit"
+            "bash -c 'cd frontend && npx tsc-files --noEmit'"
+        ],
+        "backend/**/*.{ts,tsx}": [
+            "prettier --write",
+            "eslint --fix --max-warnings=0 --no-warn-ignored",
+            "bash -c 'cd backend && npx tsc-files --noEmit'"
         ],
         "**/*.{js,jsx}": [
             "prettier --write",
