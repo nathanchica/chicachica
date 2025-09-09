@@ -1,29 +1,17 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
 import { createServer } from 'http';
-import { Server, Socket } from 'socket.io';
+import { Server } from 'socket.io';
 import cors from 'cors';
-import dotenv from 'dotenv';
-import { neon } from '@neondatabase/serverless';
-
-dotenv.config();
-
-interface MessageData {
-    room: string;
-    message: string;
-    userId?: string;
-    timestamp?: number;
-}
-
-interface JoinRoomData {
-    room: string;
-    userId?: string;
-}
+import { env } from './config/env';
+import userRoutes from './routes/userRoutes';
+import healthRoutes from './routes/healthRoutes';
+import { initializeChatSocket } from './sockets/chatSocket';
 
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
     cors: {
-        origin: process.env.CLIENT_URL || 'http://localhost:5173',
+        origin: env.CLIENT_URL,
         methods: ['GET', 'POST'],
     },
 });
@@ -31,47 +19,12 @@ const io = new Server(httpServer, {
 app.use(cors());
 app.use(express.json());
 
-app.get('/', async (_req: Request, res: Response) => {
-    const sql = neon(`${process.env.DATABASE_URL}`);
-    const response = await sql`SELECT version()`;
-    const { version } = response[0];
-    res.json({ status: 'Server is running', databaseVersion: version });
-});
+app.use('/', healthRoutes);
+app.use('/api', userRoutes);
 
-io.on('connection', (socket: Socket) => {
-    console.log('User connected:', socket.id);
+initializeChatSocket(io);
 
-    socket.on('join_room', (data: JoinRoomData) => {
-        socket.join(data.room);
-        console.log(`User ${socket.id} joined room: ${data.room}`);
-        socket.to(data.room).emit('user_joined', {
-            userId: data.userId || socket.id,
-            room: data.room,
-        });
-    });
-
-    socket.on('send_message', (data: MessageData) => {
-        console.log('Message received:', data);
-        const messageToSend = {
-            ...data,
-            userId: data.userId || socket.id,
-            timestamp: data.timestamp || Date.now(),
-        };
-        socket.to(data.room).emit('receive_message', messageToSend);
-    });
-
-    socket.on('leave_room', (room: string) => {
-        socket.leave(room);
-        console.log(`User ${socket.id} left room: ${room}`);
-        socket.to(room).emit('user_left', { userId: socket.id, room });
-    });
-
-    socket.on('disconnect', () => {
-        console.log('User disconnected:', socket.id);
-    });
-});
-
-const PORT = process.env.PORT || 3001;
+const PORT = env.PORT;
 
 httpServer.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
