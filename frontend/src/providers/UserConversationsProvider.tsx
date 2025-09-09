@@ -1,8 +1,9 @@
 import { useContext, createContext, useState, ReactNode } from 'react';
+
 import invariant from 'tiny-invariant';
 
-import { User, Conversation } from '../utils/types';
 import { mockConversations } from '../mocks/conversations';
+import { User, Conversation } from '../utils/types';
 
 export type UserContextType = {
     loggedInUser: User | null;

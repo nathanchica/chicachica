@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+
 import { sql } from '../db/client';
 
 const router = Router();

@@ -1,10 +1,12 @@
-import express from 'express';
 import { createServer } from 'http';
-import { Server } from 'socket.io';
+
 import cors from 'cors';
+import express from 'express';
+import { Server } from 'socket.io';
+
 import { env } from './config/env';
-import userRoutes from './routes/userRoutes';
 import healthRoutes from './routes/healthRoutes';
+import userRoutes from './routes/userRoutes';
 import { initializeChatSocket } from './sockets/chatSocket';
 
 const app = express();
