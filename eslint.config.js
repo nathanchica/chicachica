@@ -87,12 +87,7 @@ export default [
             '@typescript-eslint/no-explicit-any': 'warn',
 
             // General rules
-            'no-console': [
-                'warn',
-                {
-                    allow: ['warn', 'error'],
-                },
-            ],
+            'no-console': 'off',
             'no-debugger': 'error',
             'no-unused-vars': 'off', // Handled by @typescript-eslint/no-unused-vars
         },

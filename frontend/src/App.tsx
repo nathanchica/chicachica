@@ -1,4 +1,15 @@
+import { useEffect } from 'react';
+
 function App() {
+    useEffect(() => {
+        const fetchData = async () => {
+            const response = await fetch('http://localhost:3001/');
+            const data = await response.json();
+            console.log(data);
+        };
+        fetchData();
+    }, []);
+
     return (
         <>
             <div id="app" className="h-dvh bg-gray-50">
