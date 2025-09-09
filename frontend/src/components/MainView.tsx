@@ -1,8 +1,10 @@
 import invariant from 'tiny-invariant';
 
 import { useUserConversations } from '../providers/UserConversationsProvider';
+import { useConversationSearch } from '../hooks/useConversationSearch';
 import ConversationItem from './ConversationItem';
 import ConversationView from './ConversationView';
+import SearchInput from './SearchInput';
 
 function MainView() {
     const { loggedInUser, logOutUser, loadedConversations, activeConversation, viewConversation } =
@@ -10,25 +12,35 @@ function MainView() {
 
     invariant(loggedInUser, 'Logged in user required');
 
+    const { searchQuery, setSearchQuery, filteredConversations } = useConversationSearch(loadedConversations);
+
     return (
         <div className="grid grid-cols-12 gap-4 h-screen">
             <div id="chat-nav" className="col-span-3 shadow-xl flex flex-col bg-white h-screen overflow-hidden">
-                <div
+                <section
                     id="chat-nav-header"
-                    className="px-6 py-4 space-y-1 bg-white border-b border-gray-100 flex-shrink-0"
+                    className="px-6 py-4 space-y-3 bg-white border-b border-gray-100 flex-shrink-0"
                 >
-                    <h1 className="text-2xl text-gray-900 font-bold font-playfair flex items-center">
-                        <i className="fas fa-comments text-emerald-500 mr-2"></i>
-                        chicahan
-                    </h1>
-                    <p className="text-xs text-gray-500 font-merriweather italic">
-                        from the Filipino term, &quot;chikahan&quot;, which means &quot;conversation&quot;
-                    </p>
-                </div>
+                    <div>
+                        <h1 className="text-2xl text-gray-900 font-bold font-playfair flex items-center">
+                            <i className="fas fa-comments text-emerald-500 mr-2"></i>
+                            chicahan
+                        </h1>
+                        <p className="text-xs text-gray-500 font-merriweather italic">
+                            from the Filipino term, &quot;chikahan&quot;, which means &quot;conversation&quot;
+                        </p>
+                    </div>
+                    <SearchInput
+                        value={searchQuery}
+                        onChange={setSearchQuery}
+                        placeholder="Search conversations..."
+                        size="sm"
+                    />
+                </section>
 
-                <div id="conversations-list" className="px-3 flex-1 overflow-y-auto min-h-0">
-                    {loadedConversations.length > 0 ? (
-                        loadedConversations.map((conversation) => (
+                <section id="conversations-list" className="px-3 flex-1 overflow-y-auto min-h-0">
+                    {filteredConversations.length > 0 ? (
+                        filteredConversations.map((conversation) => (
                             <ConversationItem
                                 key={conversation.id}
                                 conversation={conversation}
@@ -37,13 +49,15 @@ function MainView() {
                             />
                         ))
                     ) : (
-                        <div className="text-gray-400 text-sm py-4 px-6">No conversations yet</div>
+                        <div className="text-gray-400 text-sm py-4 px-6">
+                            {searchQuery ? `No conversations found matching "${searchQuery}"` : 'No conversations yet'}
+                        </div>
                     )}
-                </div>
+                </section>
 
-                <div
+                <section
                     id="user-section"
-                    className="px-6 py-3 border-t border-gray-200 bg-white flex items-center justify-between flex-shrink-0"
+                    className="pl-6 pr-3 py-3 border-t border-gray-200 bg-white flex items-center justify-between flex-shrink-0"
                 >
                     <span className="text-sm font-medium text-gray-700">{loggedInUser.displayName}</span>
                     <button
@@ -53,8 +67,9 @@ function MainView() {
                     >
                         <i className="fas fa-sign-out-alt text-gray-600"></i>
                     </button>
-                </div>
+                </section>
             </div>
+
             <div id="chat-view" className="col-span-9 shadow-xl bg-white h-screen overflow-hidden">
                 <ConversationView activeConversation={activeConversation} loggedInUser={loggedInUser} />
             </div>

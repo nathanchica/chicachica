@@ -30,5 +30,5 @@ export const formatRelativeTime = (date: Date): string => {
  * @returns The formatted date string. Format: M/d/yyyy h:mm a (e.g., "1/9/2025 12:10 AM")
  */
 export const formatTimestamp = (date: Date): string => {
-    return format(new Date(date), 'M/d/yyyy h:mm a');
+    return format(date, 'M/d/yyyy h:mm a');
 };
