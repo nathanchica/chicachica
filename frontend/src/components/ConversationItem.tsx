@@ -1,5 +1,5 @@
 import { Conversation } from '../utils/types';
-import { formatRelativeTime, escapeHtml } from '../utils/formatters';
+import { formatRelativeTime } from '../utils/formatters';
 
 interface ConversationItemProps {
     conversation: Conversation;
@@ -31,7 +31,7 @@ function ConversationItem({ conversation, isActive, onClick }: ConversationItemP
                                 {conversation.lastMessage.author.displayName.split(' ')[0]}:{' '}
                             </span>
                         )}
-                        {escapeHtml(conversation.lastMessage.content)}
+                        {conversation.lastMessage.content}
                     </span>
                     <span className="flex-shrink-0 text-gray-400">
                         {formatRelativeTime(conversation.lastMessage.timestamp)}

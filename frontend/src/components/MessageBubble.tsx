@@ -1,5 +1,5 @@
 import { Message } from '../utils/types';
-import { formatTimestamp, escapeHtml } from '../utils/formatters';
+import { formatTimestamp } from '../utils/formatters';
 
 interface MessageBubbleProps {
     message: Message;
@@ -21,7 +21,7 @@ function MessageBubble({ message, isCurrentUser }: MessageBubbleProps) {
                         isCurrentUser ? 'bg-emerald-600 text-white' : 'bg-gray-200 text-gray-900'
                     }`}
                 >
-                    <p className="text-sm">{escapeHtml(message.content)}</p>
+                    <p className="text-sm">{message.content}</p>
                 </div>
             </div>
         </div>
