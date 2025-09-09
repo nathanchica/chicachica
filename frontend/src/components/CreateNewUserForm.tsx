@@ -66,7 +66,7 @@ function CreateNewUserForm({ onUserCreated, onBack }: CreateNewUserFormProps) {
                     minLength={2}
                     maxLength={30}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md 
-                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                             focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 />
                 <div className="flex justify-between mt-1">
                     <span className="text-xs text-gray-500">
@@ -88,7 +88,7 @@ function CreateNewUserForm({ onUserCreated, onBack }: CreateNewUserFormProps) {
                     onChange={(e) => setEmailValue(e.target.value)}
                     placeholder="your@email.com"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md 
-                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                             focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 />
             </div>
 
@@ -104,7 +104,7 @@ function CreateNewUserForm({ onUserCreated, onBack }: CreateNewUserFormProps) {
                 className={`w-full py-3 px-4 rounded-lg font-medium transition-colors mb-3 flex items-center justify-center
                           ${
                               displayNameValue.trim().length >= 2 && !isCreating
-                                  ? 'bg-blue-500 hover:bg-blue-600 text-white cursor-pointer'
+                                  ? 'bg-emerald-500 hover:bg-emerald-600 text-white cursor-pointer'
                                   : 'bg-gray-400 text-white cursor-not-allowed'
                           }`}
             >

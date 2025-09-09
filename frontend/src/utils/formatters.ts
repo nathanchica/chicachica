@@ -1,5 +1,10 @@
-import { formatDistanceToNowStrict } from 'date-fns';
+import { formatDistanceToNowStrict, format } from 'date-fns';
 
+/**
+ * Formats a date into a human-readable relative time string.
+ * @param date The date to format.
+ * @returns The formatted relative time string. (e.g., "5min ago", "2h ago", "3d ago")
+ */
 export const formatRelativeTime = (date: Date): string => {
     const distance = formatDistanceToNowStrict(new Date(date), {
         addSuffix: true,
@@ -17,4 +22,13 @@ export const formatRelativeTime = (date: Date): string => {
         .replace(' month', 'mo')
         .replace(' years', 'y')
         .replace(' year', 'y');
+};
+
+/**
+ * Formats a timestamp into a human-readable string.
+ * @param date The date to format.
+ * @returns The formatted date string. Format: M/d/yyyy h:mm a (e.g., "1/9/2025 12:10 AM")
+ */
+export const formatTimestamp = (date: Date): string => {
+    return format(date, 'M/d/yyyy h:mm a');
 };
