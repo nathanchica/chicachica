@@ -1,6 +1,6 @@
 import { User, Message, Conversation, UserStatus } from '../utils/types';
 
-const mockUsers: User[] = [
+export const mockUsers: User[] = [
     {
         id: 'user-1',
         displayName: 'Maria Santos',
@@ -144,6 +144,123 @@ const mockMessages: Message[] = [
         timestamp: new Date('2025-01-09T08:32:00Z'),
         content: 'Usual place, 10 AM?',
     },
+    // Family Group Chat messages
+    {
+        id: 'msg-11',
+        author: mockUsers[2],
+        timestamp: new Date('2025-01-09T06:30:00Z'),
+        content: 'Good morning everyone! Happy Friday!',
+    },
+    {
+        id: 'msg-12',
+        author: mockUsers[0],
+        timestamp: new Date('2025-01-09T06:35:00Z'),
+        content: 'Morning! TGIF! 🎉',
+    },
+    {
+        id: 'msg-13',
+        author: mockUsers[1],
+        timestamp: new Date('2025-01-09T06:40:00Z'),
+        content: 'Anyone free for dinner tonight? My treat!',
+    },
+    {
+        id: 'msg-14',
+        author: mockUsers[3],
+        timestamp: new Date('2025-01-09T06:45:00Z'),
+        content: 'Count me in! What time?',
+    },
+    {
+        id: 'msg-15',
+        author: mockUsers[0],
+        timestamp: new Date('2025-01-09T06:50:00Z'),
+        content: 'Same here! Saan tayo?',
+    },
+    {
+        id: 'msg-16',
+        author: mockUsers[1],
+        timestamp: new Date('2025-01-09T06:52:00Z'),
+        content: 'How about that new Korean BBQ place? 7 PM?',
+    },
+    {
+        id: 'msg-17',
+        author: mockUsers[2],
+        timestamp: new Date('2025-01-09T07:00:00Z'),
+        content: 'Perfect! See you all there!',
+    },
+    // Fitness Buddies messages
+    {
+        id: 'msg-18',
+        author: mockUsers[6],
+        timestamp: new Date('2025-01-09T05:45:00Z'),
+        content: 'Morning workout done! 💪',
+    },
+    {
+        id: 'msg-19',
+        author: mockUsers[7],
+        timestamp: new Date('2025-01-09T05:50:00Z'),
+        content: 'Nice! What did you do today?',
+    },
+    {
+        id: 'msg-20',
+        author: mockUsers[6],
+        timestamp: new Date('2025-01-09T05:52:00Z'),
+        content: '5k run plus core workout. Feeling great!',
+    },
+    {
+        id: 'msg-21',
+        author: mockUsers[0],
+        timestamp: new Date('2025-01-09T05:55:00Z'),
+        content: 'Wow, early bird! I just woke up haha',
+    },
+    {
+        id: 'msg-22',
+        author: mockUsers[6],
+        timestamp: new Date('2025-01-09T06:00:00Z'),
+        content: 'Gym at 6pm today? Leg day!',
+    },
+    // Lunch Group messages
+    {
+        id: 'msg-23',
+        author: mockUsers[5],
+        timestamp: new Date('2025-01-09T11:00:00Z'),
+        content: 'Lunch in 30 mins?',
+    },
+    {
+        id: 'msg-24',
+        author: mockUsers[9],
+        timestamp: new Date('2025-01-09T11:05:00Z'),
+        content: 'I can do 12:30, is that okay?',
+    },
+    {
+        id: 'msg-25',
+        author: mockUsers[0],
+        timestamp: new Date('2025-01-09T11:10:00Z'),
+        content: '12:30 works for me!',
+    },
+    {
+        id: 'msg-26',
+        author: mockUsers[8],
+        timestamp: new Date('2025-01-09T11:15:00Z'),
+        content: 'Same! Korean or Japanese?',
+    },
+    {
+        id: 'msg-27',
+        author: mockUsers[5],
+        timestamp: new Date('2025-01-09T11:20:00Z'),
+        content: 'Korean sounds good!',
+    },
+    {
+        id: 'msg-28',
+        author: mockUsers[0],
+        timestamp: new Date('2025-01-09T11:25:00Z'),
+        content: 'Yesss, craving some kimchi jjigae',
+    },
+    {
+        id: 'msg-29',
+        author: mockUsers[8],
+        timestamp: new Date('2025-01-09T11:30:00Z'),
+        content: 'Saan tayo lunch? I vote for Korean!',
+    },
 ];
 
 export const mockConversations: Conversation[] = [
@@ -192,15 +309,18 @@ export const mockConversations: Conversation[] = [
         title: 'Family Group Chat',
         createdAt: new Date('2024-09-10T12:00:00Z'),
         participants: [mockUsers[0], mockUsers[1], mockUsers[2], mockUsers[3]],
-        loadedMessages: [],
+        loadedMessages: [
+            mockMessages[10],
+            mockMessages[11],
+            mockMessages[12],
+            mockMessages[13],
+            mockMessages[14],
+            mockMessages[15],
+            mockMessages[16],
+        ],
         totalMessages: 156,
         unreadCount: 5,
-        lastMessage: {
-            id: 'msg-family-last',
-            author: mockUsers[2],
-            timestamp: new Date('2025-01-09T07:00:00Z'),
-            content: 'Good morning everyone! Happy Friday!',
-        },
+        lastMessage: mockMessages[16],
     },
     {
         id: 'conv-6',
@@ -238,15 +358,10 @@ export const mockConversations: Conversation[] = [
         title: 'Fitness Buddies 💪',
         createdAt: new Date('2024-09-01T07:00:00Z'),
         participants: [mockUsers[0], mockUsers[6], mockUsers[7]],
-        loadedMessages: [],
+        loadedMessages: [mockMessages[17], mockMessages[18], mockMessages[19], mockMessages[20], mockMessages[21]],
         totalMessages: 124,
         unreadCount: 0,
-        lastMessage: {
-            id: 'msg-fitness-last',
-            author: mockUsers[6],
-            timestamp: new Date('2025-01-09T06:00:00Z'),
-            content: 'Gym at 6pm today? Leg day!',
-        },
+        lastMessage: mockMessages[21],
     },
     {
         id: 'conv-9',
@@ -283,15 +398,18 @@ export const mockConversations: Conversation[] = [
         title: 'Lunch Group',
         createdAt: new Date('2024-11-05T12:00:00Z'),
         participants: [mockUsers[0], mockUsers[8], mockUsers[9], mockUsers[5]],
-        loadedMessages: [],
+        loadedMessages: [
+            mockMessages[22],
+            mockMessages[23],
+            mockMessages[24],
+            mockMessages[25],
+            mockMessages[26],
+            mockMessages[27],
+            mockMessages[28],
+        ],
         totalMessages: 201,
         unreadCount: 12,
-        lastMessage: {
-            id: 'msg-lunch-last',
-            author: mockUsers[8],
-            timestamp: new Date('2025-01-09T11:30:00Z'),
-            content: 'Saan tayo lunch? I vote for Korean!',
-        },
+        lastMessage: mockMessages[28],
     },
     {
         id: 'conv-12',

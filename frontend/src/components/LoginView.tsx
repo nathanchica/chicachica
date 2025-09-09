@@ -4,6 +4,8 @@ import { useUserConversations } from '../providers/UserConversationsProvider';
 import { useUsersApi } from '../hooks/useUsersApi';
 import CreateNewUserForm from './CreateNewUserForm';
 
+import { mockUsers } from '../mocks/conversations';
+
 function LoginView() {
     const { logInUser } = useUserConversations();
     const { fetchUsers, loading } = useUsersApi();
@@ -14,7 +16,7 @@ function LoginView() {
     const loadUsers = async () => {
         try {
             const fetchedUsers = await fetchUsers();
-            setFetchedUsers(fetchedUsers);
+            setFetchedUsers([...fetchedUsers, ...mockUsers]);
             // Automatically show create account form if no users exist
             if (fetchedUsers.length === 0) {
                 setIsCreatingAccount(true);

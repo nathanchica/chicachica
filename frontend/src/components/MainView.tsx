@@ -2,6 +2,7 @@ import invariant from 'tiny-invariant';
 
 import { useUserConversations } from '../providers/UserConversationsProvider';
 import ConversationItem from './ConversationItem';
+import ConversationView from './ConversationView';
 
 function MainView() {
     const { loggedInUser, logOutUser, loadedConversations, activeConversation, viewConversation } =
@@ -54,8 +55,8 @@ function MainView() {
                     </button>
                 </div>
             </div>
-            <div id="chat-view" className="col-span-9 p-8 shadow-xl bg-white h-screen overflow-y-auto">
-                <h1>Hello Vite + React!</h1>
+            <div id="chat-view" className="col-span-9 shadow-xl bg-white h-screen overflow-hidden">
+                <ConversationView activeConversation={activeConversation} loggedInUser={loggedInUser} />
             </div>
         </div>
     );
