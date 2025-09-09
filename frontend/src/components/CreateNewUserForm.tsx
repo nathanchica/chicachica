@@ -1,0 +1,134 @@
+import { useState } from 'react';
+import { User } from '../utils/types';
+import { useUsersApi } from '../hooks/useUsersApi';
+import LoadingSpinner from './LoadingSpinner';
+
+interface CreateNewUserFormProps {
+    onUserCreated: (user: User) => void;
+    onBack?: () => void;
+}
+
+function CreateNewUserForm({ onUserCreated, onBack }: CreateNewUserFormProps) {
+    const { createUser } = useUsersApi();
+    const [displayNameValue, setDisplayNameValue] = useState('');
+    const [emailValue, setEmailValue] = useState('');
+    const [createError, setCreateError] = useState<string | null>(null);
+    const [isCreating, setIsCreating] = useState(false);
+
+    const handleCreateAccount = async () => {
+        const trimmedName = displayNameValue.trim();
+        if (trimmedName && trimmedName.length >= 2) {
+            setCreateError(null);
+            setIsCreating(true);
+            try {
+                const newUser = await createUser(trimmedName, emailValue.trim() || undefined);
+                onUserCreated(newUser);
+            } catch (err) {
+                let errorMessage = 'Failed to create account';
+                if (err instanceof Error) {
+                    // Check for specific error types from backend
+                    if (err.message.includes('409') || err.message.includes('already exists')) {
+                        errorMessage = 'An account with this email already exists';
+                    } else if (err.message.includes('400')) {
+                        errorMessage = 'Invalid account information provided';
+                    } else if (err.message.includes('500')) {
+                        errorMessage = 'Server error. Please try again later';
+                    }
+                }
+                setCreateError(errorMessage);
+            } finally {
+                setIsCreating(false);
+            }
+        }
+    };
+
+    const handleBack = () => {
+        setDisplayNameValue('');
+        setEmailValue('');
+        setCreateError(null);
+
+        if (onBack) {
+            onBack();
+        }
+    };
+
+    return (
+        <div>
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">Create a new account</h2>
+
+            <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Display Name *</label>
+                <input
+                    type="text"
+                    value={displayNameValue}
+                    onChange={(e) => setDisplayNameValue(e.target.value.slice(0, 30))}
+                    placeholder="Enter your name"
+                    minLength={2}
+                    maxLength={30}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md 
+                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <div className="flex justify-between mt-1">
+                    <span className="text-xs text-gray-500">
+                        {displayNameValue.trim().length < 2 && displayNameValue.trim().length > 0
+                            ? 'Minimum 2 characters'
+                            : '2-30 characters'}
+                    </span>
+                    <span className={`text-xs ${displayNameValue.length > 25 ? 'text-orange-500' : 'text-gray-500'}`}>
+                        {displayNameValue.length}/30
+                    </span>
+                </div>
+            </div>
+
+            <div className="mb-5">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email (optional)</label>
+                <input
+                    type="email"
+                    value={emailValue}
+                    onChange={(e) => setEmailValue(e.target.value)}
+                    placeholder="your@email.com"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md 
+                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+            </div>
+
+            {createError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                    <p className="text-sm text-red-600">{createError}</p>
+                </div>
+            )}
+
+            <button
+                onClick={handleCreateAccount}
+                disabled={!displayNameValue.trim() || displayNameValue.trim().length < 2 || isCreating}
+                className={`w-full py-3 px-4 rounded-lg font-medium transition-colors mb-3 flex items-center justify-center
+                          ${
+                              displayNameValue.trim().length >= 2 && !isCreating
+                                  ? 'bg-blue-500 hover:bg-blue-600 text-white cursor-pointer'
+                                  : 'bg-gray-400 text-white cursor-not-allowed'
+                          }`}
+            >
+                {isCreating ? (
+                    <>
+                        <LoadingSpinner className="-ml-1 mr-2" />
+                        Creating Account...
+                    </>
+                ) : (
+                    'Create Account'
+                )}
+            </button>
+
+            {onBack && (
+                <button
+                    onClick={handleBack}
+                    className="w-full py-3 px-4 cursor-pointer bg-white hover:bg-gray-50 text-gray-600 
+                             border border-gray-300 rounded-lg font-medium transition-colors"
+                >
+                    Back
+                </button>
+            )}
+        </div>
+    );
+}
+
+export default CreateNewUserForm;
