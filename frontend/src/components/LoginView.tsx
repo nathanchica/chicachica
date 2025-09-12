@@ -7,7 +7,6 @@ import UserList from './UserList';
 
 import { useUserSearch } from '../hooks/useUserSearch';
 import { useUsersApi } from '../hooks/useUsersApi';
-import { mockUsers } from '../mocks/conversations';
 import { useUserConversations } from '../providers/UserConversationsProvider';
 import { User } from '../utils/types';
 
@@ -24,10 +23,13 @@ function LoginView() {
     const loadUsers = async () => {
         try {
             const users = await fetchUsers();
-            setFetchedUsers([...users, ...mockUsers]);
+            if (users.length > 0) {
+                setFetchedUsers(users);
+            } else {
+                setIsCreatingAccount(true);
+            }
         } catch (err) {
             console.error('Failed to load users:', err);
-            setFetchedUsers(mockUsers);
         }
     };
 
@@ -90,7 +92,7 @@ function LoginView() {
                     </div>
                 ) : (
                     <div>
-                        <h2 className="text-lg font-semibold text-gray-700 mb-4">Select an account</h2>
+                        <h3 className="text-md font-semibold text-gray-700 mb-4">Select an account</h3>
 
                         <SearchInput
                             value={searchQuery}
