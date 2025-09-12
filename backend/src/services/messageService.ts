@@ -39,7 +39,7 @@ export class MessageService {
     }
 
     /**
-     * @returns Messages in descending order by timestamp
+     * @returns Messages in ascending order by timestamp (oldest first)
      * @throws {DatabaseError} When database operation fails
      */
     async getMessagesForConversation(conversationId: string, limit = 50, offset = 0): Promise<MessageWithAuthor[]> {
@@ -54,7 +54,7 @@ export class MessageService {
                 JOIN users u ON m.author_id = u.id
                 WHERE m.conversation_id = ${conversationId}
                     AND m.is_deleted = false
-                ORDER BY m.timestamp DESC
+                ORDER BY m.timestamp ASC
                 LIMIT ${limit}
                 OFFSET ${offset}
             `;
