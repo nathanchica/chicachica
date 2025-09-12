@@ -1,112 +1,97 @@
 import { Request, Response } from 'express';
+import { ZodError } from 'zod';
 
 import { UniqueConstraintError, DatabaseError } from '../db/errors';
-import { UserService } from '../services/userService';
-
-enum UserStatus {
-    ONLINE = 'online',
-    AWAY = 'away',
-    OFFLINE = 'offline',
-}
-
-const validUserStatuses = Object.values(UserStatus);
-
-const userService = new UserService();
+import { userService } from '../services';
+import { createUserSchema, updateUserStatusSchema } from '../validation/user';
 
 function validateUserId(id: string | undefined): boolean {
     return !!(id && id.trim());
 }
 
-export class UserController {
-    async createUser(req: Request, res: Response): Promise<void> {
-        try {
-            const { display_name, email, status } = req.body;
+export async function createUser(req: Request, res: Response): Promise<void> {
+    try {
+        const validatedData = createUserSchema.parse(req.body);
 
-            if (!display_name) {
-                res.status(400).json({ error: 'display_name is required' });
-                return;
-            }
+        const user = await userService.createUser(validatedData);
 
-            const user = await userService.createUser({
-                display_name,
-                email,
-                status,
-            });
-
-            res.status(201).json(user);
-        } catch (error) {
-            if (error instanceof UniqueConstraintError) {
-                res.status(409).json({ error: error.message });
-            } else if (error instanceof DatabaseError) {
-                console.error('Database error:', error);
-                res.status(500).json({ error: 'Database operation failed' });
-            } else if (error instanceof Error) {
-                console.error('Error creating user:', error);
-                res.status(500).json({ error: 'Failed to create user' });
-            } else {
-                console.error('Unknown error:', error);
-                res.status(500).json({ error: 'An unknown error occurred' });
-            }
+        res.status(201).json(user);
+    } catch (error) {
+        if (error instanceof ZodError) {
+            const firstError = error.issues[0];
+            res.status(400).json({ error: firstError.message });
+        } else if (error instanceof UniqueConstraintError) {
+            res.status(409).json({ error: error.message });
+        } else if (error instanceof DatabaseError) {
+            console.error('Database error:', error);
+            res.status(500).json({ error: 'Database operation failed' });
+        } else if (error instanceof Error) {
+            console.error('Error creating user:', error);
+            res.status(500).json({ error: 'Failed to create user' });
+        } else {
+            console.error('Unknown error:', error);
+            res.status(500).json({ error: 'An unknown error occurred' });
         }
     }
+}
 
-    async getUser(req: Request, res: Response): Promise<void> {
-        try {
-            const { id } = req.params;
+export async function getUser(req: Request, res: Response): Promise<void> {
+    try {
+        const { id } = req.params;
 
-            if (!validateUserId(id)) {
-                res.status(400).json({ error: 'Valid user ID is required' });
-                return;
-            }
-
-            const user = await userService.getUserById(id);
-
-            if (!user) {
-                res.status(404).json({ error: 'User not found' });
-                return;
-            }
-
-            res.json(user);
-        } catch (error) {
-            console.error('Error fetching user:', error);
-            res.status(500).json({ error: 'Failed to fetch user' });
+        if (!validateUserId(id)) {
+            res.status(400).json({ error: 'Valid user ID is required' });
+            return;
         }
-    }
 
-    async getAllUsers(_req: Request, res: Response): Promise<void> {
-        try {
-            const users = await userService.getAllUsers();
-            res.json(users);
-        } catch (error) {
-            console.error('Error fetching users:', error);
-            res.status(500).json({ error: 'Failed to fetch users' });
+        const user = await userService.getUserById(id);
+
+        if (!user) {
+            res.status(404).json({ error: 'User not found' });
+            return;
         }
+
+        res.json(user);
+    } catch (error) {
+        console.error('Error fetching user:', error);
+        res.status(500).json({ error: 'Failed to fetch user' });
     }
+}
 
-    async updateUserStatus(req: Request, res: Response): Promise<void> {
-        try {
-            const { id } = req.params;
-            const { status } = req.body;
+export async function getAllUsers(_req: Request, res: Response): Promise<void> {
+    try {
+        const users = await userService.getAllUsers();
+        res.json(users);
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        res.status(500).json({ error: 'Failed to fetch users' });
+    }
+}
 
-            if (!validateUserId(id)) {
-                res.status(400).json({ error: 'Valid user ID is required' });
-                return;
-            }
+export async function updateUserStatus(req: Request, res: Response): Promise<void> {
+    try {
+        const { id } = req.params;
 
-            if (!status || !validUserStatuses.includes(status)) {
-                res.status(400).json({ error: `Valid status is required (${validUserStatuses.join(', ')})` });
-                return;
-            }
+        if (!validateUserId(id)) {
+            res.status(400).json({ error: 'Valid user ID is required' });
+            return;
+        }
 
-            const user = await userService.updateUserStatus(id, status);
+        const validatedData = updateUserStatusSchema.parse(req.body);
 
-            if (!user) {
-                res.status(404).json({ error: 'User not found' });
-                return;
-            }
+        const user = await userService.updateUserStatus(id, validatedData.status);
 
-            res.json(user);
-        } catch (error) {
+        if (!user) {
+            res.status(404).json({ error: 'User not found' });
+            return;
+        }
+
+        res.json(user);
+    } catch (error) {
+        if (error instanceof ZodError) {
+            const firstError = error.issues[0];
+            res.status(400).json({ error: firstError.message });
+        } else {
             console.error('Error updating user status:', error);
             res.status(500).json({ error: 'Failed to update user status' });
         }
