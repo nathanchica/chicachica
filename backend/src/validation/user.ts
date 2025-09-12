@@ -12,9 +12,9 @@ const MAX_USER_DISPLAY_NAME_LENGTH = 30;
 export const createUserSchema = z.object({
     display_name: z
         .string()
+        .trim()
         .min(1, 'Display name is required')
-        .max(MAX_USER_DISPLAY_NAME_LENGTH, `Display name cannot exceed ${MAX_USER_DISPLAY_NAME_LENGTH} characters`)
-        .trim(),
+        .max(MAX_USER_DISPLAY_NAME_LENGTH, `Display name cannot exceed ${MAX_USER_DISPLAY_NAME_LENGTH} characters`),
     email: z.email('Invalid email address').trim().toLowerCase().optional(),
     status: UserStatusEnum.optional().default(UserStatus.ONLINE),
 });
