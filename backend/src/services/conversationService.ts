@@ -105,15 +105,33 @@ export class ConversationService {
 
     /**
      * @returns List of conversations the user is a participant of
+     * @param includeEmptyUnowned - If true, includes all conversations that the user is a participant of;
+     * if false, only includes conversations created by the user or those with messages (default: false)
      * @throws {DatabaseError} When database operation fails
      */
-    async getConversationsForUser(userId: string, limit = 50, offset = 0): Promise<Conversation[]> {
+    async getConversationsForUser(
+        userId: string,
+        limit = 50,
+        offset = 0,
+        includeEmptyUnowned = false
+    ): Promise<Conversation[]> {
         try {
             const result = await sql`
                 SELECT DISTINCT c.*
                 FROM conversations c
                 JOIN conversation_participants cp ON c.id = cp.conversation_id
                 WHERE cp.user_id = ${userId}
+                  ${
+                      includeEmptyUnowned
+                          ? sql``
+                          : sql`AND (
+                        c.created_by = ${userId}
+                        OR EXISTS (
+                            SELECT 1 FROM messages m
+                            WHERE m.conversation_id = c.id
+                        )
+                      )`
+                  }
                 ORDER BY c.created_at DESC
                 LIMIT ${limit}
                 OFFSET ${offset}
@@ -130,15 +148,28 @@ export class ConversationService {
 
     /**
      * @returns The count of conversations the user is a participant of
+     * @param includeEmptyUnowned - If true, includes all conversations that the user is a participant of;
+     * if false, only includes conversations created by the user or those with messages (default: false)
      * @throws {DatabaseError} When database operation fails
      */
-    async getConversationsCountForUser(userId: string): Promise<number> {
+    async getConversationsCountForUser(userId: string, includeEmptyUnowned = false): Promise<number> {
         try {
             const result = await sql`
                 SELECT COUNT(DISTINCT c.id) as count
                 FROM conversations c
                 JOIN conversation_participants cp ON c.id = cp.conversation_id
                 WHERE cp.user_id = ${userId}
+                  ${
+                      includeEmptyUnowned
+                          ? sql``
+                          : sql`AND (
+                        c.created_by = ${userId}
+                        OR EXISTS (
+                            SELECT 1 FROM messages m
+                            WHERE m.conversation_id = c.id
+                        )
+                      )`
+                  }
             `;
 
             return Number(result[0].count);

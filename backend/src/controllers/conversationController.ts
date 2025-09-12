@@ -13,6 +13,35 @@ export interface UserConversation extends ConversationWithParticipants {
     total_messages: number;
 }
 
+/**
+ * Get all conversations for the authenticated user with metadata
+ *
+ * By default, filters out empty conversations not created by the user.
+ * This ensures participants only see conversations once a message has been sent,
+ * while creators can see their own empty conversations.
+ *
+ * @param req - Express request object
+ * @param req.query.limit - Maximum number of conversations to return (default: 50)
+ * @param req.query.offset - Number of conversations to skip for pagination (default: 0)
+ * @param req.user.id - Authenticated user ID (required)
+ *
+ * @param res - Express response object
+ * @returns JSON response with:
+ *   - conversations: Array of conversation objects with:
+ *     - id: Conversation ID
+ *     - title: Conversation title (generated based on participants' names unless is_custom_title is true)
+ *     - created_at: Timestamp of creation
+ *     - created_by: User ID of creator
+ *     - is_custom_title: Whether the title was custom set
+ *     - participants: Array of participant details
+ *     - unread_count: Number of unread messages for the user
+ *     - last_message: Most recent message in the conversation (or null)
+ *     - total_messages: Total count of messages in the conversation
+ *   - total: Total count of conversations for the user (respecting the same filter)
+ *
+ * @throws 401 - If user is not authenticated
+ * @throws 500 - If database operation fails
+ */
 export async function getConversationsForUser(req: Request, res: Response): Promise<void> {
     try {
         const userId = req.user?.id;
