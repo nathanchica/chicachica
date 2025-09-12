@@ -64,6 +64,7 @@ export default [
                 HTMLInputElement: 'readonly',
                 HTMLElement: 'readonly',
                 Element: 'readonly',
+                KeyboardEvent: 'readonly',
                 // Timer functions
                 setTimeout: 'readonly',
                 clearTimeout: 'readonly',
