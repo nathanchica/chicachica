@@ -76,11 +76,9 @@ export function createChatSocketHandler({ messageService, conversationService, u
                     socket.currentConversation = conversationId;
                     socket.join(`conversation:${conversationId}`);
 
-                    const user = await userService.getUserById(userId);
-
                     socket.to(`conversation:${conversationId}`).emit('user_joined_conversation', {
                         userId,
-                        userName: user?.display_name,
+                        userName: user.display_name,
                         conversationId,
                     });
 
@@ -88,7 +86,7 @@ export function createChatSocketHandler({ messageService, conversationService, u
 
                     socket.emit('conversation_history', {
                         conversationId,
-                        messages: recentMessages.reverse(),
+                        messages: recentMessages,
                     });
                 } catch (error) {
                     console.error('Error joining conversation:', error);
@@ -163,8 +161,9 @@ export function createChatSocketHandler({ messageService, conversationService, u
                 }
             });
 
-            socket.on('leave_conversation', ({ conversationId }: LeaveConversationEventInput) => {
+            socket.on('leave_conversation', async ({ conversationId }: LeaveConversationEventInput) => {
                 if (socket.currentConversation === conversationId) {
+                    await validateConversationMembership(conversationId, userId);
                     socket.leave(`conversation:${conversationId}`);
                     socket.currentConversation = undefined;
 
@@ -172,8 +171,6 @@ export function createChatSocketHandler({ messageService, conversationService, u
                         userId,
                         conversationId,
                     });
-
-                    console.log(`User ${userId} left conversation ${conversationId}`);
                 }
             });
 

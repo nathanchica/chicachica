@@ -32,7 +32,8 @@ export async function authenticateSocket(socket: SocketWithUser, next: (err?: Ex
         socket.userId = userId;
         socket.user = user;
         next();
-    } catch {
+    } catch (error) {
+        console.error('Socket authentication error:', error);
         next(new Error('Authentication failed'));
     }
 }
