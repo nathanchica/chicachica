@@ -4,9 +4,9 @@ import Fuse from 'fuse.js';
 
 import { User } from '../utils/types';
 
-const USERS_PER_PAGE = 4;
+const DEFAULT_USERS_PER_PAGE = 4;
 
-export function useUserSearch(users: User[]) {
+export function useUserSearch(users: User[], usersPerPage = DEFAULT_USERS_PER_PAGE) {
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
 
@@ -24,13 +24,13 @@ export function useUserSearch(users: User[]) {
         return fuse.search(searchQuery).map((result) => result.item);
     }, [searchQuery, users, fuse]);
 
-    const totalPages = Math.ceil(filteredUsers.length / USERS_PER_PAGE);
+    const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
 
     const paginatedUsers = useMemo(() => {
-        const startIndex = (currentPage - 1) * USERS_PER_PAGE;
-        const endIndex = startIndex + USERS_PER_PAGE;
+        const startIndex = (currentPage - 1) * usersPerPage;
+        const endIndex = startIndex + usersPerPage;
         return filteredUsers.slice(startIndex, endIndex);
-    }, [filteredUsers, currentPage]);
+    }, [filteredUsers, currentPage, usersPerPage]);
 
     useEffect(() => {
         setCurrentPage(1);
