@@ -10,6 +10,9 @@ interface CreateNewUserFormProps {
     onBack?: () => void;
 }
 
+const MAX_DISPLAY_NAME_LENGTH = 30;
+const MIN_DISPLAY_NAME_LENGTH = 2;
+
 function CreateNewUserForm({ onUserCreated, onBack }: CreateNewUserFormProps) {
     const { createUser } = useUsersApi();
     const [displayNameValue, setDisplayNameValue] = useState('');
@@ -19,7 +22,7 @@ function CreateNewUserForm({ onUserCreated, onBack }: CreateNewUserFormProps) {
 
     const handleCreateAccount = async () => {
         const trimmedName = displayNameValue.trim();
-        if (trimmedName && trimmedName.length >= 2) {
+        if (trimmedName && trimmedName.length >= MIN_DISPLAY_NAME_LENGTH) {
             setCreateError(null);
             setIsCreating(true);
             try {
@@ -44,6 +47,13 @@ function CreateNewUserForm({ onUserCreated, onBack }: CreateNewUserFormProps) {
         }
     };
 
+    const handleFormSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!isCreating && displayNameValue.trim().length >= MIN_DISPLAY_NAME_LENGTH) {
+            handleCreateAccount();
+        }
+    };
+
     const handleBack = () => {
         setDisplayNameValue('');
         setEmailValue('');
@@ -55,7 +65,7 @@ function CreateNewUserForm({ onUserCreated, onBack }: CreateNewUserFormProps) {
     };
 
     return (
-        <div>
+        <form onSubmit={handleFormSubmit}>
             <h2 className="text-lg font-semibold text-gray-700 mb-4">Create a new account</h2>
 
             <div className="mb-4">
@@ -63,21 +73,21 @@ function CreateNewUserForm({ onUserCreated, onBack }: CreateNewUserFormProps) {
                 <input
                     type="text"
                     value={displayNameValue}
-                    onChange={(e) => setDisplayNameValue(e.target.value.slice(0, 30))}
+                    onChange={(e) => setDisplayNameValue(e.target.value.slice(0, MAX_DISPLAY_NAME_LENGTH))}
                     placeholder="Enter your name"
-                    minLength={2}
-                    maxLength={30}
+                    minLength={MIN_DISPLAY_NAME_LENGTH}
+                    maxLength={MAX_DISPLAY_NAME_LENGTH}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md 
                              focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 />
                 <div className="flex justify-between mt-1">
                     <span className="text-xs text-gray-500">
-                        {displayNameValue.trim().length < 2 && displayNameValue.trim().length > 0
-                            ? 'Minimum 2 characters'
-                            : '2-30 characters'}
+                        {displayNameValue.trim().length < MIN_DISPLAY_NAME_LENGTH && displayNameValue.trim().length > 0
+                            ? `Minimum ${MIN_DISPLAY_NAME_LENGTH} characters`
+                            : `${MIN_DISPLAY_NAME_LENGTH}-${MAX_DISPLAY_NAME_LENGTH} characters`}
                     </span>
                     <span className={`text-xs ${displayNameValue.length > 25 ? 'text-orange-500' : 'text-gray-500'}`}>
-                        {displayNameValue.length}/30
+                        {displayNameValue.length}/{MAX_DISPLAY_NAME_LENGTH}
                     </span>
                 </div>
             </div>
@@ -101,11 +111,13 @@ function CreateNewUserForm({ onUserCreated, onBack }: CreateNewUserFormProps) {
             )}
 
             <button
-                onClick={handleCreateAccount}
-                disabled={!displayNameValue.trim() || displayNameValue.trim().length < 2 || isCreating}
+                type="submit"
+                disabled={
+                    !displayNameValue.trim() || displayNameValue.trim().length < MIN_DISPLAY_NAME_LENGTH || isCreating
+                }
                 className={`w-full py-3 px-4 rounded-lg font-medium transition-colors mb-3 flex items-center justify-center
                           ${
-                              displayNameValue.trim().length >= 2 && !isCreating
+                              displayNameValue.trim().length >= MIN_DISPLAY_NAME_LENGTH && !isCreating
                                   ? 'bg-emerald-500 hover:bg-emerald-600 text-white cursor-pointer'
                                   : 'bg-gray-400 text-white cursor-not-allowed'
                           }`}
@@ -122,6 +134,7 @@ function CreateNewUserForm({ onUserCreated, onBack }: CreateNewUserFormProps) {
 
             {onBack && (
                 <button
+                    type="button"
                     onClick={handleBack}
                     className="w-full py-3 px-4 cursor-pointer bg-white hover:bg-gray-50 text-gray-600 
                              border border-gray-300 rounded-lg font-medium transition-colors"
@@ -129,7 +142,7 @@ function CreateNewUserForm({ onUserCreated, onBack }: CreateNewUserFormProps) {
                     Back
                 </button>
             )}
-        </div>
+        </form>
     );
 }
 
