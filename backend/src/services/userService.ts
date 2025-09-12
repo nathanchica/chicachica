@@ -12,6 +12,7 @@ export interface User {
 
 export class UserService {
     /**
+     * @returns The created user
      * @throws {UniqueConstraintError} When email already exists
      * @throws {DatabaseError} When database operation fails
      */
@@ -29,6 +30,7 @@ export class UserService {
     }
 
     /**
+     * @returns The user or null if not found
      * @throws {DatabaseError} When database operation fails
      */
     async getUserById(id: string): Promise<User | null> {
@@ -43,6 +45,7 @@ export class UserService {
     }
 
     /**
+     * @returns The user or null if not found
      * @throws {DatabaseError} When database operation fails
      */
     async getUserByEmail(email: string): Promise<User | null> {
@@ -57,6 +60,7 @@ export class UserService {
     }
 
     /**
+     * @returns The updated user or null if not found
      * @throws {DatabaseError} When database operation fails
      */
     async updateUserStatus(id: string, status: 'online' | 'away' | 'offline'): Promise<User | null> {
@@ -74,6 +78,7 @@ export class UserService {
     }
 
     /**
+     * @returns List of all users
      * @throws {DatabaseError} When database operation fails
      */
     async getAllUsers(): Promise<User[]> {

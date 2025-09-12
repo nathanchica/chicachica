@@ -83,7 +83,7 @@ async function initializeDatabase(skipPrompt = false) {
         await sql`
       CREATE TABLE conversations (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        title VARCHAR(255) NOT NULL,
+        title VARCHAR(255),
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         created_by UUID REFERENCES users(id) ON DELETE SET NULL
       )
