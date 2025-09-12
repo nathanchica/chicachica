@@ -4,8 +4,8 @@ export interface User {
     id: string;
     displayName: string;
     email: string;
-    createdAt: Date;
-    lastSeen: Date;
+    createdAt?: Date;
+    lastSeen?: Date;
     status: UserStatus;
 }
 
@@ -16,13 +16,17 @@ export interface Message {
     content: string;
 }
 
-export interface Conversation {
+export interface ConversationMetadata {
     id: string;
     title: string;
+    lastMessage: Message | null;
+    unreadCount: number;
+    isCustomTitle: boolean;
+}
+
+export interface Conversation extends ConversationMetadata {
     createdAt: Date;
     participants: User[];
     loadedMessages: Message[];
     totalMessages: number;
-    unreadCount: number;
-    lastMessage: Message | null;
 }
