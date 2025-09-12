@@ -5,9 +5,27 @@ interface ConversationItemProps {
     conversation: Conversation;
     isActive: boolean;
     onClick: () => void;
+    currentUserId: string;
 }
 
-function ConversationItem({ conversation, isActive, onClick }: ConversationItemProps) {
+function ConversationItem({ conversation, isActive, onClick, currentUserId }: ConversationItemProps) {
+    const { lastMessage } = conversation;
+
+    let lastMessagePreview;
+    if (lastMessage) {
+        const { author, content, timestamp } = lastMessage;
+        const lastMessageAuthorDisplayName = author.id === currentUserId ? 'You' : author.displayName.split(' ')[0];
+
+        lastMessagePreview = (
+            <div className="text-xs text-gray-400 flex items-center gap-1">
+                <span className="truncate flex-1 min-w-0">
+                    <span className="font-medium">{lastMessageAuthorDisplayName}: </span>
+                    {content}
+                </span>
+                <span className="flex-shrink-0 text-gray-400">{formatRelativeTime(timestamp)}</span>
+            </div>
+        );
+    }
     return (
         <div
             onClick={onClick}
@@ -23,21 +41,8 @@ function ConversationItem({ conversation, isActive, onClick }: ConversationItemP
                     </span>
                 )}
             </div>
-            {conversation.lastMessage && (
-                <div className="text-xs text-gray-400 flex items-center gap-1">
-                    <span className="truncate flex-1 min-w-0">
-                        {conversation.participants.length > 2 && (
-                            <span className="font-medium">
-                                {conversation.lastMessage.author.displayName.split(' ')[0]}:{' '}
-                            </span>
-                        )}
-                        {conversation.lastMessage.content}
-                    </span>
-                    <span className="flex-shrink-0 text-gray-400">
-                        {formatRelativeTime(conversation.lastMessage.timestamp)}
-                    </span>
-                </div>
-            )}
+
+            {lastMessagePreview}
         </div>
     );
 }
