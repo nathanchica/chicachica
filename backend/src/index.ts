@@ -5,9 +5,13 @@ import express from 'express';
 import { Server } from 'socket.io';
 
 import { env } from './config/env';
+import { authenticateUser } from './middleware/auth';
+import conversationRoutes from './routes/conversationRoutes';
 import healthRoutes from './routes/healthRoutes';
+import messageRoutes from './routes/messageRoutes';
 import userRoutes from './routes/userRoutes';
-import { initializeChatSocket } from './sockets/chatSocket';
+import { conversationService, messageService, userService } from './services';
+import { createChatSocketHandler } from './sockets/chatSocket';
 
 const app = express();
 const httpServer = createServer(app);
@@ -23,6 +27,14 @@ app.use(express.json());
 
 app.use('/', healthRoutes);
 app.use('/api', userRoutes);
+app.use('/api', authenticateUser, conversationRoutes);
+app.use('/api', authenticateUser, messageRoutes);
+
+const initializeChatSocket = createChatSocketHandler({
+    messageService,
+    conversationService,
+    userService,
+});
 
 initializeChatSocket(io);
 

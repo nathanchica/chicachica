@@ -2,7 +2,7 @@ import { sql } from '../db/client';
 import { processDatabaseError } from '../db/errors';
 
 export interface User {
-    id?: string;
+    id: string;
     display_name: string;
     email?: string;
     status?: 'online' | 'away' | 'offline';
