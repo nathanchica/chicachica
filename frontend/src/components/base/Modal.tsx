@@ -27,17 +27,25 @@ function Modal({ isVisible, onClose, title, children }: ModalProps) {
     if (!isVisible) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center" role="presentation">
+            <div className="absolute inset-0 bg-black/50" onClick={onClose} aria-hidden="true" />
 
-            <div className="relative bg-white rounded-xl shadow-xl p-6 w-full max-w-lg max-h-[80vh] flex flex-col">
+            <div
+                className="relative bg-white rounded-xl shadow-xl p-6 w-full max-w-lg max-h-[80vh] flex flex-col"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="modal-title"
+            >
                 <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+                    <h2 id="modal-title" className="text-xl font-semibold text-gray-900">
+                        {title}
+                    </h2>
                     <button
                         onClick={onClose}
                         className="text-gray-400 cursor-pointer hover:text-gray-600 transition-colors"
+                        aria-label="Close modal"
                     >
-                        <i className="fas fa-times text-xl"></i>
+                        <i className="fas fa-times text-xl" aria-hidden="true"></i>
                     </button>
                 </div>
 

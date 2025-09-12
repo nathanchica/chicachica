@@ -10,9 +10,11 @@ function IconButton({ onClick, iconClass, buttonClass = 'text-gray-600', title }
         <button
             onClick={onClick}
             title={title}
+            aria-label={title}
             className={`cursor-pointer transition-colors hover:text-emerald-500 ${buttonClass}`}
+            type="button"
         >
-            <i className={iconClass}></i>
+            <i className={iconClass} aria-hidden="true"></i>
         </button>
     );
 }
