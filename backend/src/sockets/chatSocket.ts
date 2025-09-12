@@ -1,77 +1,73 @@
-import { Server, Socket } from 'socket.io';
+import { Server } from 'socket.io';
+
+import { authenticateSocket, SocketWithUser } from './middleware';
 
 import { ConversationService } from '../services/conversationService';
 import { MessageService, Message, MessageWithAuthor } from '../services/messageService';
-import { UserService, User } from '../services/userService';
+import { UserService } from '../services/userService';
 
-interface MessageData {
+type SendMessageEventInput = {
     conversationId: string;
     content: string;
-    userId: string;
-}
+};
 
-interface JoinConversationData {
+type JoinConversationEventInput = {
     conversationId: string;
-    userId: string;
-}
+};
 
-interface TypingData {
+type TypingEventInput = {
     conversationId: string;
-    userId: string;
     isTyping: boolean;
-}
+};
 
-interface MessageReadData {
+type MessageReadEventInput = {
     conversationId: string;
     messageId: string;
-}
+};
 
-interface SocketWithUser extends Socket {
-    userId?: string;
-    currentConversation?: string;
-}
+type LeaveConversationEventInput = {
+    conversationId: string;
+};
 
-interface ChatSocketDependencies {
+type ChatSocketDependencies = {
     messageService: MessageService;
     conversationService: ConversationService;
     userService: UserService;
-}
+};
 
 export function createChatSocketHandler({ messageService, conversationService, userService }: ChatSocketDependencies) {
+    /**
+     * Helper to validate user is a member of the conversation
+     * @throws Error if user is not in conversation
+     */
+    async function validateConversationMembership(conversationId: string, userId: string): Promise<void> {
+        const isInConversation = await conversationService.isUserInConversation(conversationId, userId);
+        if (!isInConversation) {
+            throw new Error('Not a member of this conversation');
+        }
+    }
+
     return function initializeChatSocket(io: Server) {
-        io.on('connection', (socket: SocketWithUser) => {
-            socket.on('authenticate', async (userId: string) => {
+        // Apply authentication middleware to all connections
+        io.use(authenticateSocket);
+
+        io.on('connection', async (socket: SocketWithUser) => {
+            // User is already authenticated via middleware
+            const { userId, user } = socket;
+
+            // userId and user are guaranteed to exist by authenticateSocket middleware
+            if (!userId || !user) {
+                socket.disconnect();
+                return;
+            }
+
+            socket.join(`user:${userId}`);
+            await userService.updateUserStatus(userId, 'online');
+            socket.emit('authenticated', { success: true, userId });
+
+            socket.on('join_conversation', async ({ conversationId }: JoinConversationEventInput) => {
                 try {
-                    const user = await userService.getUserById(userId);
-                    if (user) {
-                        socket.userId = userId;
-                        socket.join(`user:${userId}`);
-                        await userService.updateUserStatus(userId, 'online');
-                        socket.emit('authenticated', { success: true });
-                    } else {
-                        socket.emit('authenticated', { success: false, error: 'User not found' });
-                    }
-                } catch (error) {
-                    console.error('Authentication error:', error);
-                    socket.emit('authenticated', { success: false, error: 'Authentication failed' });
-                }
-            });
-
-            socket.on('join_conversation', async ({ conversationId }: JoinConversationData) => {
-                try {
-                    const { userId } = socket;
-
-                    if (!userId) {
-                        socket.emit('error', { message: 'Not authenticated' });
-                        return;
-                    }
-
-                    const isInConversation = await conversationService.isUserInConversation(conversationId, userId);
-
-                    if (!isInConversation) {
-                        socket.emit('error', { message: 'Not a member of this conversation' });
-                        return;
-                    }
+                    await validateConversationMembership(conversationId, userId);
 
                     if (socket.currentConversation) {
                         socket.leave(socket.currentConversation);
@@ -100,28 +96,9 @@ export function createChatSocketHandler({ messageService, conversationService, u
                 }
             });
 
-            socket.on('send_message', async ({ conversationId, content }: MessageData) => {
+            socket.on('send_message', async ({ conversationId, content }: SendMessageEventInput) => {
                 try {
-                    const { userId } = socket;
-
-                    if (!userId) {
-                        socket.emit('error', { message: 'Not authenticated' });
-                        return;
-                    }
-
-                    const user: User | null = await userService.getUserById(userId);
-
-                    if (!user) {
-                        socket.emit('error', { message: 'User not found' });
-                        return;
-                    }
-
-                    const isInConversation = await conversationService.isUserInConversation(conversationId, userId);
-
-                    if (!isInConversation) {
-                        socket.emit('error', { message: 'Not a member of this conversation' });
-                        return;
-                    }
+                    await validateConversationMembership(conversationId, userId);
 
                     const { display_name, email, status } = user;
 
@@ -144,20 +121,15 @@ export function createChatSocketHandler({ messageService, conversationService, u
                 }
             });
 
-            socket.on('typing', async ({ userId: typingUserId, conversationId, isTyping }: TypingData) => {
+            socket.on('typing', async ({ conversationId, isTyping }: TypingEventInput) => {
                 try {
-                    const typingUser = await userService.getUserById(typingUserId);
+                    await validateConversationMembership(conversationId, userId);
 
-                    if (!typingUser) {
-                        socket.emit('error', { message: 'User not found' });
-                        return;
-                    }
-
-                    const { display_name } = typingUser;
+                    const { display_name } = user;
 
                     socket.to(`conversation:${conversationId}`).emit('user_typing', {
                         conversationId,
-                        userId: typingUserId,
+                        userId,
                         userName: display_name,
                         isTyping,
                     });
@@ -166,20 +138,9 @@ export function createChatSocketHandler({ messageService, conversationService, u
                 }
             });
 
-            socket.on('message_read', async ({ conversationId, messageId }: MessageReadData) => {
+            socket.on('message_read', async ({ conversationId, messageId }: MessageReadEventInput) => {
                 try {
-                    const { userId } = socket;
-                    if (!userId) {
-                        socket.emit('error', { message: 'Not authenticated' });
-                        return;
-                    }
-
-                    const isInConversation = await conversationService.isUserInConversation(conversationId, userId);
-
-                    if (!isInConversation) {
-                        socket.emit('error', { message: 'Not a member of this conversation' });
-                        return;
-                    }
+                    await validateConversationMembership(conversationId, userId);
 
                     const updated = await conversationService.updateLastReadMessage(conversationId, userId, messageId);
 
@@ -202,9 +163,7 @@ export function createChatSocketHandler({ messageService, conversationService, u
                 }
             });
 
-            socket.on('leave_conversation', (conversationId: string) => {
-                const { userId } = socket;
-
+            socket.on('leave_conversation', ({ conversationId }: LeaveConversationEventInput) => {
                 if (socket.currentConversation === conversationId) {
                     socket.leave(`conversation:${conversationId}`);
                     socket.currentConversation = undefined;
@@ -219,17 +178,15 @@ export function createChatSocketHandler({ messageService, conversationService, u
             });
 
             socket.on('disconnect', async () => {
-                const { userId, currentConversation } = socket;
+                const { currentConversation } = socket;
 
-                if (userId) {
-                    await userService.updateUserStatus(userId, 'offline');
+                await userService.updateUserStatus(userId, 'offline');
 
-                    if (currentConversation) {
-                        socket.to(`conversation:${currentConversation}`).emit('user_left_conversation', {
-                            userId,
-                            conversationId: currentConversation,
-                        });
-                    }
+                if (currentConversation) {
+                    socket.to(`conversation:${currentConversation}`).emit('user_left_conversation', {
+                        userId,
+                        conversationId: currentConversation,
+                    });
                 }
             });
         });
