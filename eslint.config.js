@@ -59,6 +59,16 @@ export default [
                 URL: 'readonly',
                 URLSearchParams: 'readonly',
                 React: 'readonly',
+                // DOM types
+                HTMLDivElement: 'readonly',
+                HTMLInputElement: 'readonly',
+                HTMLElement: 'readonly',
+                Element: 'readonly',
+                // Timer functions
+                setTimeout: 'readonly',
+                clearTimeout: 'readonly',
+                setInterval: 'readonly',
+                clearInterval: 'readonly',
             },
         },
         plugins: {
