@@ -1,6 +1,6 @@
 # chicachica
 
-Vite React app + Express + Socket.io for chatting
+Vite React app + Express + Socket.io + Neon Serverless Postgres for chatting
 
 "ChicaChica" is named after the Filipino phrase "Chika Chika" which means "chit-chat" or casual conversation.
 

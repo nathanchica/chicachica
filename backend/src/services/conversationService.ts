@@ -1,8 +1,8 @@
-import { MessageWithAuthor } from './messageService';
+import { MessageWithAuthor } from './messageService.js';
 
-import { sql } from '../db/client';
-import { processDatabaseError } from '../db/errors';
-import { QueryResultWithCount } from '../db/types';
+import { sql } from '../db/client.js';
+import { processDatabaseError } from '../db/errors.js';
+import { QueryResultWithCount } from '../db/types.js';
 
 export interface Conversation {
     id: string;

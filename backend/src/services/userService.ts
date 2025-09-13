@@ -1,5 +1,5 @@
-import { sql } from '../db/client';
-import { processDatabaseError } from '../db/errors';
+import { sql } from '../db/client.js';
+import { processDatabaseError } from '../db/errors.js';
 
 export interface User {
     id: string;

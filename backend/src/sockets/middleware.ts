@@ -1,8 +1,7 @@
 import { Socket } from 'socket.io';
-import { ExtendedError } from 'socket.io/dist/namespace';
 
-import { userService } from '../services';
-import { User } from '../services/userService';
+import { userService } from '../services/index.js';
+import { User } from '../services/userService.js';
 
 export interface SocketWithUser extends Socket {
     userId?: string;
@@ -14,7 +13,7 @@ export interface SocketWithUser extends Socket {
  * Authentication middleware that runs on connection
  * Validates the userId from handshake auth data
  */
-export async function authenticateSocket(socket: SocketWithUser, next: (err?: ExtendedError) => void) {
+export async function authenticateSocket(socket: SocketWithUser, next: (err?: Error) => void) {
     try {
         // Get userId from handshake auth (sent from client on connection)
         const userId = socket.handshake.auth?.userId;

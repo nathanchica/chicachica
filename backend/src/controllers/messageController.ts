@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import { ZodError } from 'zod';
 
-import { conversationService, messageService } from '../services';
-import { createMessageSchema, updateMessageSchema } from '../validation/message';
+import { conversationService, messageService } from '../services/index.js';
+import { createMessageSchema, updateMessageSchema } from '../validation/message.js';
 
 export async function getConversationMessages(req: Request, res: Response): Promise<void> {
     try {

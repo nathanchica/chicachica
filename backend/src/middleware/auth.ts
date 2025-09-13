@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 
-import { userService } from '../services';
+import { userService } from '../services/index.js';
 
 /**
  * Attach user info to Express Request object

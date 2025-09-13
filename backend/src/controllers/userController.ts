@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
 import { ZodError } from 'zod';
 
-import { UniqueConstraintError, DatabaseError } from '../db/errors';
-import { userService } from '../services';
-import { createUserSchema, updateUserStatusSchema } from '../validation/user';
+import { UniqueConstraintError, DatabaseError } from '../db/errors.js';
+import { userService } from '../services/index.js';
+import { createUserSchema, updateUserStatusSchema } from '../validation/user.js';
 
 function validateUserId(id: string | undefined): boolean {
     return !!(id && id.trim());
