@@ -5,7 +5,8 @@
     "type": "module",
     "workspaces": [
         "frontend",
-        "backend"
+        "backend",
+        "terminal-client"
     ],
     "scripts": {
         "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
@@ -49,6 +50,11 @@
             "prettier --write",
             "eslint --fix --max-warnings=0 --no-warn-ignored",
             "bash -c 'cd backend && npx tsc-files --noEmit'"
+        ],
+        "terminal-client/**/*.{ts,tsx}": [
+            "prettier --write",
+            "eslint --fix --max-warnings=0 --no-warn-ignored",
+            "bash -c 'cd terminal-client && npx tsc-files --noEmit'"
         ],
         "**/*.{js,jsx}": [
             "prettier --write",
