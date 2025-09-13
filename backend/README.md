@@ -89,34 +89,47 @@ Manages messages within conversations:
 
 #### **ChatSocket** (`/sockets/chatSocket.ts`)
 
-Real-time communication layer using Socket.io:
+Real-time communication layer using Socket.io with dependency injection pattern:
+
+**Architecture:**
+
+- Uses factory function `createChatSocketHandler` for dependency injection
+- Accepts services (MessageService, ConversationService, UserService) as dependencies
+- Implements comprehensive TypeScript types for all events
+- Validates conversation membership before all operations
 
 **Events (Client → Server):**
 
-- `authenticate` - Links socket to user ID
-- `join_conversation` - Subscribes to conversation room
-- `send_message` - Broadcasts new message
+- `join_conversation` - Subscribes to conversation room (validates membership)
+- `send_message` - Broadcasts new message with formatted payload
 - `typing` - Broadcasts typing indicator
-- `message_read` - Updates read receipts
+- `message_read` - Updates read receipts and notifies participants
 - `leave_conversation` - Unsubscribes from room
-- `disconnect` - Handles cleanup
+- `disconnect` - Handles cleanup and status updates
 
 **Events (Server → Client):**
 
-- `authenticated` - Confirms authentication
-- `conversation_history` - Sends recent messages
-- `new_message` - Broadcasts incoming message
-- `user_typing` - Shows typing indicators
+- `authenticated` - Confirms authentication with userId
+- `conversation_history` - Sends recent messages and last read message
+- `new_message` - Broadcasts incoming message with author details
+- `conversation_meta_updated` - Updates conversation metadata (last message, unread count)
+- `user_typing` - Shows typing indicators with user details
 - `user_joined_conversation` - Notifies of new participant
 - `user_left_conversation` - Notifies of departure
-- `message_read_updated` - Confirms read receipt
-- `user_read_message` - Broadcasts read receipts
-- `error` - Error notifications
+- `message_read_updated` - Confirms read receipt update
+- `user_read_message` - Broadcasts read receipts to other users
+- `error` - Error notifications with descriptive messages
 
 **Room Management:**
 
-- `user:{userId}` - Personal notifications
-- `conversation:{conversationId}` - Conversation participants
+- `user:{userId}` - Personal notifications and conversation metadata updates
+- `conversation:{conversationId}` - Conversation participants for real-time messaging
+
+**Type Safety:**
+
+- Fully typed event payloads (SendMessageEventInput, JoinConversationEventInput, etc.)
+- Consistent MessagePayload structure across all message-related events
+- SocketWithUser type extending Socket with user authentication data
 
 ## Database Schema
 
