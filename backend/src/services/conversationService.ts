@@ -205,6 +205,57 @@ export class ConversationService {
     }
 
     /**
+     * @returns A mapping of user IDs to their unread count for a specific conversation
+     * @throws {DatabaseError} When database operation fails
+     */
+    async getUnreadCountForConversation(
+        conversationId: string,
+        userIds: string[]
+    ): Promise<{ [userId: string]: number }> {
+        if (userIds.length === 0) return {};
+
+        try {
+            const result = await sql`
+                SELECT 
+                    cp.user_id,
+                    COUNT(CASE 
+                        WHEN m.id IS NOT NULL 
+                            AND m.author_id != cp.user_id
+                            AND (
+                                cp.last_read_message_id IS NULL 
+                                OR m.timestamp > (
+                                    SELECT timestamp FROM messages 
+                                    WHERE id = cp.last_read_message_id
+                                )
+                            ) THEN 1 
+                    END) as unread_count
+                FROM conversation_participants cp
+                LEFT JOIN messages m ON m.conversation_id = cp.conversation_id 
+                    AND m.is_deleted = false
+                WHERE cp.conversation_id = ${conversationId}
+                    AND cp.user_id = ANY(${userIds})
+                GROUP BY cp.user_id, cp.last_read_message_id
+            `;
+
+            const userIdToUnreadCount: { [userId: string]: number } = {};
+            (result as { user_id: string; unread_count: string }[]).forEach((row) => {
+                userIdToUnreadCount[row.user_id] = Number(row.unread_count);
+            });
+
+            // Ensure all requested users have an entry (0 if no unread messages)
+            userIds.forEach((id) => {
+                if (!(id in userIdToUnreadCount)) {
+                    userIdToUnreadCount[id] = 0;
+                }
+            });
+
+            return userIdToUnreadCount;
+        } catch (error) {
+            throw processDatabaseError(error);
+        }
+    }
+
+    /**
      * @returns A mapping of conversation IDs to their unread message counts for a user
      * @throws {DatabaseError} When database operation fails
      */

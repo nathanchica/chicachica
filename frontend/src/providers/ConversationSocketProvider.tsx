@@ -5,7 +5,7 @@ import invariant from 'tiny-invariant';
 
 import { useUserConversations } from './UserConversationsProvider';
 
-import { Message, UserStatus } from '../utils/types';
+import { Message, User } from '../utils/types';
 
 type ConversationSocketContextType = {
     isConnected: boolean;
@@ -20,37 +20,17 @@ type ConversationSocketContextType = {
 
 type MessagePayload = {
     id: string;
-    conversation_id: string;
-    author_id: string;
-    content: string;
     timestamp: string;
-    edited_at?: string | null;
-    is_deleted: boolean;
-    created_at: string;
-    author_name: string;
-    author_email?: string;
-    author_status: string;
+    content: string;
+    author: User;
 };
 
-const formatMessage = ({
-    id,
-    author_id,
-    content,
-    timestamp,
-    author_name,
-    author_email,
-    author_status,
-}: MessagePayload): Message => ({
-    id,
-    author: {
-        id: author_id,
-        displayName: author_name,
-        email: author_email || '',
-        status: author_status as UserStatus,
-    },
-    content,
-    timestamp: new Date(timestamp),
-});
+const formatMessage = (message: MessagePayload): Message => {
+    return {
+        ...message,
+        timestamp: new Date(message.timestamp),
+    };
+};
 
 const ConversationSocketContext = createContext<ConversationSocketContextType | undefined>(undefined);
 
@@ -65,7 +45,7 @@ type Props = {
 };
 
 function ConversationSocketProvider({ children }: Props) {
-    const { loggedInUser, activeConversation } = useUserConversations();
+    const { loggedInUser, activeConversation, updateConversation } = useUserConversations();
 
     const [socket, setSocket] = useState<Socket | null>(null);
     const [isConnected, setIsConnected] = useState(false);
@@ -197,17 +177,49 @@ function ConversationSocketProvider({ children }: Props) {
             setIsConnected(false);
         });
 
-        newSocket.on('conversation_history', (data: { conversationId: string; messages: MessagePayload[] }) => {
-            if (data.conversationId === activeConversationIdRef.current) {
-                setMessages(data.messages.map(formatMessage));
+        newSocket.on(
+            'conversation_history',
+            ({ conversationId, messages }: { conversationId: string; messages: MessagePayload[] }) => {
+                if (conversationId === activeConversationIdRef.current) {
+                    setMessages(messages.map((message) => formatMessage(message)));
+                }
             }
-        });
+        );
 
-        newSocket.on('new_message', (data: { conversationId: string; message: MessagePayload }) => {
-            if (data.conversationId === activeConversationIdRef.current) {
-                setMessages((prev) => [...prev, formatMessage(data.message)]);
+        newSocket.on(
+            'new_message',
+            ({ conversationId, message }: { conversationId: string; message: MessagePayload }) => {
+                if (conversationId === activeConversationIdRef.current) {
+                    setMessages((prev) => [...prev, formatMessage(message)]);
+                }
             }
-        });
+        );
+
+        newSocket.on(
+            'conversation_meta_updated',
+            ({
+                conversationId,
+                lastMessage,
+                unreadCount,
+                title,
+            }: {
+                conversationId: string;
+                lastMessage?: MessagePayload;
+                unreadCount?: number;
+                title?: string;
+            }) => {
+                const formattedData = {
+                    ...(lastMessage !== undefined
+                        ? {
+                              lastMessage: formatMessage(lastMessage),
+                          }
+                        : {}),
+                    ...(typeof unreadCount === 'number' ? { unreadCount } : {}),
+                    ...(typeof title === 'string' ? { title } : {}),
+                };
+                updateConversation({ id: conversationId, ...formattedData });
+            }
+        );
 
         newSocket.on(
             'user_typing',

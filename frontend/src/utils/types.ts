@@ -1,12 +1,15 @@
 export type UserStatus = 'online' | 'away' | 'offline';
 
-export interface User {
-    id: string;
-    displayName: string;
-    email: string;
+export interface UserMetadata {
+    email?: string;
     createdAt?: Date;
     lastSeen?: Date;
-    status: UserStatus;
+    status?: UserStatus;
+}
+
+export interface User extends UserMetadata {
+    id: string;
+    displayName: string;
 }
 
 export interface Message {
