@@ -1,3 +1,5 @@
+import { MessageWithAuthor } from './messageService';
+
 import { sql } from '../db/client';
 import { processDatabaseError } from '../db/errors';
 import { QueryResultWithCount } from '../db/types';
@@ -400,18 +402,65 @@ export class ConversationService {
     }
 
     /**
-     * @returns true if last read message was updated, false otherwise
+     * @returns The last read message with author info for a user in a conversation, or null if not set
      * @throws {DatabaseError} When database operation fails
      */
-    async updateLastReadMessage(conversationId: string, userId: string, messageId: string): Promise<boolean> {
+    async getLastReadMessage(userId: string, conversationId: string): Promise<MessageWithAuthor | null> {
         try {
             const result = await sql`
-                UPDATE conversation_participants
-                SET last_read_message_id = ${messageId}
-                WHERE conversation_id = ${conversationId}
-                    AND user_id = ${userId}
+                SELECT 
+                    m.*,
+                    u.display_name as author_name,
+                    u.email as author_email,
+                    u.status as author_status
+                FROM conversation_participants cp
+                JOIN messages m ON cp.last_read_message_id = m.id
+                JOIN users u ON m.author_id = u.id
+                WHERE cp.user_id = ${userId}
+                    AND cp.conversation_id = ${conversationId}
+                    AND m.is_deleted = false
             `;
-            return (result as unknown as QueryResultWithCount).count > 0;
+
+            if (!result[0]) return null;
+
+            return result[0] as MessageWithAuthor;
+        } catch (error) {
+            throw processDatabaseError(error);
+        }
+    }
+
+    /**
+     * @returns The updated message with author info if valid, or null if message doesn't exist or update failed
+     * @throws {DatabaseError} When database operation fails
+     */
+    async updateLastReadMessage(
+        conversationId: string,
+        userId: string,
+        messageId: string
+    ): Promise<MessageWithAuthor | null> {
+        try {
+            const result = await sql`
+                UPDATE conversation_participants cp
+                SET last_read_message_id = ${messageId}
+                FROM messages m
+                JOIN users u ON m.author_id = u.id
+                WHERE cp.conversation_id = ${conversationId}
+                    AND cp.user_id = ${userId}
+                    AND m.id = ${messageId}
+                    AND m.conversation_id = ${conversationId}
+                    AND m.is_deleted = false
+                RETURNING 
+                    m.*,
+                    u.display_name as author_name,
+                    u.email as author_email,
+                    u.status as author_status
+            `;
+
+            if (result.length === 0) {
+                return null;
+            }
+
+            return result[0] as MessageWithAuthor;
         } catch (error) {
             throw processDatabaseError(error);
         }

@@ -15,6 +15,7 @@ type ConversationSocketContextType = {
     sendTypingEvent: (isTyping: boolean) => void;
     sendMessageReadEvent: (messageId: string) => void;
     messages: Message[];
+    lastReadMessage: Message | null;
     typingUsers: Map<string, { userName: string; timestamp: number }>;
 };
 
@@ -52,6 +53,7 @@ function ConversationSocketProvider({ children }: Props) {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
     const [typingUsers, setTypingUsers] = useState<Map<string, { userName: string; timestamp: number }>>(new Map());
+    const [lastReadMessage, setLastReadMessage] = useState<Message | null>(null);
 
     const typingTimeoutRef = useRef<Map<string, number>>(new Map());
     const activeConversationIdRef = useRef<string | null>(null);
@@ -179,8 +181,17 @@ function ConversationSocketProvider({ children }: Props) {
 
         newSocket.on(
             'conversation_history',
-            ({ conversationId, messages }: { conversationId: string; messages: MessagePayload[] }) => {
+            ({
+                conversationId,
+                messages,
+                lastReadMessage,
+            }: {
+                conversationId: string;
+                messages: MessagePayload[];
+                lastReadMessage: MessagePayload | null;
+            }) => {
                 if (conversationId === activeConversationIdRef.current) {
+                    setLastReadMessage(lastReadMessage ? formatMessage(lastReadMessage) : null);
                     setMessages(messages.map((message) => formatMessage(message)));
                 }
             }
@@ -264,8 +275,8 @@ function ConversationSocketProvider({ children }: Props) {
             }
         );
 
-        newSocket.on('message_read_updated', (data: { conversationId: string; messageId: string; userId: string }) => {
-            console.log('Message read updated:', data);
+        newSocket.on('message_read_updated', ({ lastReadMessage }: { lastReadMessage: MessagePayload | null }) => {
+            setLastReadMessage(lastReadMessage ? formatMessage(lastReadMessage) : null);
         });
 
         newSocket.on('user_read_message', (data: { conversationId: string; messageId: string; userId: string }) => {
@@ -307,6 +318,7 @@ function ConversationSocketProvider({ children }: Props) {
                 sendMessageReadEvent,
                 messages,
                 typingUsers,
+                lastReadMessage,
             }}
         >
             {children}

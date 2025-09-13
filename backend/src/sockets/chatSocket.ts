@@ -103,9 +103,23 @@ export function createChatSocketHandler({ messageService, conversationService, u
                         })
                     );
 
+                    const lastReadMessage = await conversationService.getLastReadMessage(userId, conversationId);
+                    const formattedLastReadMessage: MessagePayload | null = lastReadMessage
+                        ? {
+                              id: lastReadMessage.id,
+                              content: lastReadMessage.content,
+                              timestamp: lastReadMessage.created_at,
+                              author: {
+                                  id: lastReadMessage.author_id,
+                                  displayName: lastReadMessage.author_name,
+                              },
+                          }
+                        : null;
+
                     socket.emit('conversation_history', {
                         conversationId,
                         messages: formattedMessages,
+                        lastReadMessage: formattedLastReadMessage,
                     });
                 } catch (error) {
                     console.error('Error joining conversation:', error);
@@ -195,19 +209,45 @@ export function createChatSocketHandler({ messageService, conversationService, u
                 try {
                     await validateConversationMembership(conversationId, userId);
 
-                    const updated = await conversationService.updateLastReadMessage(conversationId, userId, messageId);
+                    const lastReadMessage = await conversationService.updateLastReadMessage(
+                        conversationId,
+                        userId,
+                        messageId
+                    );
 
-                    if (updated) {
+                    if (lastReadMessage) {
+                        const {
+                            id,
+                            content,
+                            created_at: timestamp,
+                            author_id: authorId,
+                            author_name: authorDisplayName,
+                        } = lastReadMessage;
+
+                        const formattedMessage: MessagePayload = {
+                            id,
+                            content,
+                            timestamp,
+                            author: {
+                                id: authorId,
+                                displayName: authorDisplayName,
+                            },
+                        };
+
                         socket.emit('message_read_updated', {
-                            conversationId,
-                            messageId,
-                            userId,
+                            lastReadMessage: formattedMessage,
                         });
 
                         socket.to(`conversation:${conversationId}`).emit('user_read_message', {
                             conversationId,
                             messageId,
                             userId,
+                        });
+
+                        io.to(`user:${userId}`).emit('conversation_meta_updated', {
+                            conversationId,
+                            lastMessage: formattedMessage,
+                            unreadCount: 0,
                         });
                     }
                 } catch (error) {

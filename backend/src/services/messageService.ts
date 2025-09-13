@@ -39,10 +39,41 @@ export class MessageService {
     }
 
     /**
-     * @returns Messages in ascending order by timestamp (oldest first)
+     * @returns Latest messages in ascending order by timestamp (oldest to newest of the most recent messages)
      * @throws {DatabaseError} When database operation fails
      */
     async getMessagesForConversation(conversationId: string, limit = 50, offset = 0): Promise<MessageWithAuthor[]> {
+        try {
+            // Get the latest messages first, then reverse to show in chronological order
+            const result = await sql`
+                WITH latest_messages AS (
+                    SELECT 
+                        m.*,
+                        u.display_name as author_name,
+                        u.email as author_email,
+                        u.status as author_status
+                    FROM messages m
+                    JOIN users u ON m.author_id = u.id
+                    WHERE m.conversation_id = ${conversationId}
+                        AND m.is_deleted = false
+                    ORDER BY m.timestamp DESC
+                    LIMIT ${limit}
+                    OFFSET ${offset}
+                )
+                SELECT * FROM latest_messages
+                ORDER BY timestamp ASC
+            `;
+            return result as MessageWithAuthor[];
+        } catch (error) {
+            throw processDatabaseError(error);
+        }
+    }
+
+    /**
+     * @returns The message with author information or null if not found
+     * @throws {DatabaseError} When database operation fails
+     */
+    async getMessageById(messageId: string): Promise<MessageWithAuthor | null> {
         try {
             const result = await sql`
                 SELECT 
@@ -52,29 +83,9 @@ export class MessageService {
                     u.status as author_status
                 FROM messages m
                 JOIN users u ON m.author_id = u.id
-                WHERE m.conversation_id = ${conversationId}
-                    AND m.is_deleted = false
-                ORDER BY m.timestamp ASC
-                LIMIT ${limit}
-                OFFSET ${offset}
+                WHERE m.id = ${messageId}
             `;
-            return result as MessageWithAuthor[];
-        } catch (error) {
-            throw processDatabaseError(error);
-        }
-    }
-
-    /**
-     * @returns The message or null if not found
-     * @throws {DatabaseError} When database operation fails
-     */
-    async getMessageById(messageId: string): Promise<Message | null> {
-        try {
-            const result = await sql`
-                SELECT * FROM messages
-                WHERE id = ${messageId}
-            `;
-            return (result[0] as Message) || null;
+            return (result[0] as MessageWithAuthor) || null;
         } catch (error) {
             throw processDatabaseError(error);
         }
