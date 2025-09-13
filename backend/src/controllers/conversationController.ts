@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 
-import { conversationService, messageService } from '../services';
-import { ConversationWithParticipants } from '../services/conversationService';
-import { MessageWithAuthor } from '../services/messageService';
+import { ConversationWithParticipants } from '../services/conversationService.js';
+import { conversationService, messageService } from '../services/index.js';
+import { MessageWithAuthor } from '../services/messageService.js';
 
 const MAX_PARTICIPANTS = 10;
 const MAX_TITLE_LENGTH = 400;

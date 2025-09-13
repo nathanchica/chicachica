@@ -4,14 +4,14 @@ import cors from 'cors';
 import express from 'express';
 import { Server } from 'socket.io';
 
-import { env } from './config/env';
-import { authenticateUser } from './middleware/auth';
-import conversationRoutes from './routes/conversationRoutes';
-import healthRoutes from './routes/healthRoutes';
-import messageRoutes from './routes/messageRoutes';
-import userRoutes from './routes/userRoutes';
-import { conversationService, messageService, userService } from './services';
-import { createChatSocketHandler } from './sockets/chatSocket';
+import { env } from './config/env.js';
+import { authenticateUser } from './middleware/auth.js';
+import conversationRoutes from './routes/conversationRoutes.js';
+import healthRoutes from './routes/healthRoutes.js';
+import messageRoutes from './routes/messageRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import { conversationService, messageService, userService } from './services/index.js';
+import { createChatSocketHandler } from './sockets/chatSocket.js';
 
 const app = express();
 const httpServer = createServer(app);

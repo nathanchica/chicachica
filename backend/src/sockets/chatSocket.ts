@@ -1,10 +1,10 @@
 import { Server } from 'socket.io';
 
-import { authenticateSocket, SocketWithUser } from './middleware';
+import { authenticateSocket, SocketWithUser } from './middleware.js';
 
-import { ConversationService } from '../services/conversationService';
-import { MessageService } from '../services/messageService';
-import { UserService } from '../services/userService';
+import { ConversationService } from '../services/conversationService.js';
+import { MessageService } from '../services/messageService.js';
+import { UserService } from '../services/userService.js';
 
 type SendMessageEventInput = {
     conversationId: string;
