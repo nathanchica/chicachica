@@ -30,7 +30,10 @@ export const useUserConversations = (): UserContextType => {
  * Provides data about the logged in user and their loaded conversations.
  */
 function UserConversationsProvider({ children }: { children: ReactNode }) {
-    const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
+    const [loggedInUser, setLoggedInUser] = useState<User | null>(() => {
+        const storedUser = localStorage.getItem('loggedInUser');
+        return storedUser ? JSON.parse(storedUser) : null;
+    });
     const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
     const [loadedConversations, setLoadedConversations] = useState<Conversation[]>([]);
     const [totalConversations, setTotalConversations] = useState<number>(0);
@@ -39,6 +42,7 @@ function UserConversationsProvider({ children }: { children: ReactNode }) {
 
     const logInUser = (user: User) => {
         setLoggedInUser(user);
+        localStorage.setItem('loggedInUser', JSON.stringify(user));
         setActiveConversation(null);
         setLoadedConversations([]);
         setTotalConversations(0);
@@ -46,6 +50,7 @@ function UserConversationsProvider({ children }: { children: ReactNode }) {
 
     const logOutUser = () => {
         setLoggedInUser(null);
+        localStorage.removeItem('loggedInUser');
         setActiveConversation(null);
         setLoadedConversations([]);
         setTotalConversations(0);
