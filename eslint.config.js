@@ -70,6 +70,9 @@ export default [
                 clearTimeout: 'readonly',
                 setInterval: 'readonly',
                 clearInterval: 'readonly',
+                // Storage
+                localStorage: 'readonly',
+                sessionStorage: 'readonly',
             },
         },
         plugins: {
