@@ -15,6 +15,7 @@ export type UserContextType = {
     totalConversations: number;
     refetchConversations: () => Promise<void>;
     isFetchingConversations: boolean;
+    updateConversation: (newData: Partial<Conversation>) => void;
 };
 
 const UserConversationsContext = createContext<UserContextType | undefined>(undefined);
@@ -54,6 +55,20 @@ function UserConversationsProvider({ children }: { children: ReactNode }) {
         setActiveConversation(conversation);
     };
 
+    const updateConversation = (newData: Partial<Conversation>) => {
+        setActiveConversation((prevConversation) => {
+            if (!prevConversation) return prevConversation;
+            if (!newData.id || prevConversation.id !== newData.id) return prevConversation;
+            return { ...prevConversation, ...newData };
+        });
+        setLoadedConversations((prevConversations) => {
+            return prevConversations.map((conversation) => {
+                if (!newData.id || conversation.id !== newData.id) return conversation;
+                return { ...conversation, ...newData };
+            });
+        });
+    };
+
     const fetchConversations = async () => {
         if (loggedInUser) {
             try {
@@ -84,6 +99,7 @@ function UserConversationsProvider({ children }: { children: ReactNode }) {
                 totalConversations,
                 refetchConversations: fetchConversations,
                 isFetchingConversations,
+                updateConversation,
             }}
         >
             {children}

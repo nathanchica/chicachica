@@ -1,3 +1,5 @@
+import { MessageWithAuthor } from './messageService';
+
 import { sql } from '../db/client';
 import { processDatabaseError } from '../db/errors';
 import { QueryResultWithCount } from '../db/types';
@@ -205,6 +207,57 @@ export class ConversationService {
     }
 
     /**
+     * @returns A mapping of user IDs to their unread count for a specific conversation
+     * @throws {DatabaseError} When database operation fails
+     */
+    async getUnreadCountForConversation(
+        conversationId: string,
+        userIds: string[]
+    ): Promise<{ [userId: string]: number }> {
+        if (userIds.length === 0) return {};
+
+        try {
+            const result = await sql`
+                SELECT 
+                    cp.user_id,
+                    COUNT(CASE 
+                        WHEN m.id IS NOT NULL 
+                            AND m.author_id != cp.user_id
+                            AND (
+                                cp.last_read_message_id IS NULL 
+                                OR m.timestamp > (
+                                    SELECT timestamp FROM messages 
+                                    WHERE id = cp.last_read_message_id
+                                )
+                            ) THEN 1 
+                    END) as unread_count
+                FROM conversation_participants cp
+                LEFT JOIN messages m ON m.conversation_id = cp.conversation_id 
+                    AND m.is_deleted = false
+                WHERE cp.conversation_id = ${conversationId}
+                    AND cp.user_id = ANY(${userIds})
+                GROUP BY cp.user_id, cp.last_read_message_id
+            `;
+
+            const userIdToUnreadCount: { [userId: string]: number } = {};
+            (result as { user_id: string; unread_count: string }[]).forEach((row) => {
+                userIdToUnreadCount[row.user_id] = Number(row.unread_count);
+            });
+
+            // Ensure all requested users have an entry (0 if no unread messages)
+            userIds.forEach((id) => {
+                if (!(id in userIdToUnreadCount)) {
+                    userIdToUnreadCount[id] = 0;
+                }
+            });
+
+            return userIdToUnreadCount;
+        } catch (error) {
+            throw processDatabaseError(error);
+        }
+    }
+
+    /**
      * @returns A mapping of conversation IDs to their unread message counts for a user
      * @throws {DatabaseError} When database operation fails
      */
@@ -349,18 +402,65 @@ export class ConversationService {
     }
 
     /**
-     * @returns true if last read message was updated, false otherwise
+     * @returns The last read message with author info for a user in a conversation, or null if not set
      * @throws {DatabaseError} When database operation fails
      */
-    async updateLastReadMessage(conversationId: string, userId: string, messageId: string): Promise<boolean> {
+    async getLastReadMessage(userId: string, conversationId: string): Promise<MessageWithAuthor | null> {
         try {
             const result = await sql`
-                UPDATE conversation_participants
-                SET last_read_message_id = ${messageId}
-                WHERE conversation_id = ${conversationId}
-                    AND user_id = ${userId}
+                SELECT 
+                    m.*,
+                    u.display_name as author_name,
+                    u.email as author_email,
+                    u.status as author_status
+                FROM conversation_participants cp
+                JOIN messages m ON cp.last_read_message_id = m.id
+                JOIN users u ON m.author_id = u.id
+                WHERE cp.user_id = ${userId}
+                    AND cp.conversation_id = ${conversationId}
+                    AND m.is_deleted = false
             `;
-            return (result as unknown as QueryResultWithCount).count > 0;
+
+            if (!result[0]) return null;
+
+            return result[0] as MessageWithAuthor;
+        } catch (error) {
+            throw processDatabaseError(error);
+        }
+    }
+
+    /**
+     * @returns The updated message with author info if valid, or null if message doesn't exist or update failed
+     * @throws {DatabaseError} When database operation fails
+     */
+    async updateLastReadMessage(
+        conversationId: string,
+        userId: string,
+        messageId: string
+    ): Promise<MessageWithAuthor | null> {
+        try {
+            const result = await sql`
+                UPDATE conversation_participants cp
+                SET last_read_message_id = ${messageId}
+                FROM messages m
+                JOIN users u ON m.author_id = u.id
+                WHERE cp.conversation_id = ${conversationId}
+                    AND cp.user_id = ${userId}
+                    AND m.id = ${messageId}
+                    AND m.conversation_id = ${conversationId}
+                    AND m.is_deleted = false
+                RETURNING 
+                    m.*,
+                    u.display_name as author_name,
+                    u.email as author_email,
+                    u.status as author_status
+            `;
+
+            if (result.length === 0) {
+                return null;
+            }
+
+            return result[0] as MessageWithAuthor;
         } catch (error) {
             throw processDatabaseError(error);
         }

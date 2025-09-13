@@ -59,7 +59,7 @@ function ConversationView() {
     const typingTimeoutRef = useRef<number | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    const { sendMessage, sendTypingEvent, sendMessageReadEvent, messages, typingUsers, isConnected } =
+    const { sendMessage, sendTypingEvent, sendMessageReadEvent, messages, typingUsers, isConnected, lastReadMessage } =
         useConversationSocket();
 
     const handleSendMessage = (e: React.FormEvent) => {
@@ -109,26 +109,19 @@ function ConversationView() {
 
     const groupedMessages = groupMessages(messages, loggedInUser.id);
 
-    // Mark the latest message as read when messages change or conversation becomes visible
     useEffect(() => {
-        if (messages.length === 0 || !isConnected || !activeConversation) return;
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
 
-        const latestMessage = messages[messages.length - 1];
-
-        // Only send read event if:
-        // 1. The latest message is from another user (not the current user)
-        // 2. The latest message is newer than what we've already marked as read
-        if (latestMessage.author.id !== loggedInUser.id) {
-            // If there's a lastMessage tracked in the conversation, check if this is newer
-            if (!activeConversation.lastMessage || latestMessage.timestamp > activeConversation.lastMessage.timestamp) {
+        if (messages.length > 0) {
+            const latestMessage = messages[messages.length - 1];
+            if (
+                latestMessage.author.id !== loggedInUser.id &&
+                (!lastReadMessage || lastReadMessage.id !== latestMessage.id)
+            ) {
                 sendMessageReadEvent(latestMessage.id);
             }
         }
-    }, [messages, isConnected, loggedInUser.id, activeConversation, sendMessageReadEvent]);
-
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
+    }, [messages]); // eslint-disable-line react-hooks/exhaustive-deps
 
     if (!activeConversation) {
         return (
