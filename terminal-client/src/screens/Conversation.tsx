@@ -83,6 +83,8 @@ function Conversation({ user, conversationId, onBack }: Props) {
         subscribeToHistory,
         subscribeToNewMessages,
         subscribeToTyping,
+        subscribeToReadUpdate,
+        markMessageAsRead,
         isConnected,
     } = useWebSocket();
 
@@ -101,6 +103,7 @@ function Conversation({ user, conversationId, onBack }: Props) {
     const [scrollOffset, setScrollOffset] = useState(0);
     const messagesEndRef = useRef<number>(0);
     const [showCommands, setShowCommands] = useState(false);
+    const lastMarkedAsReadRef = useRef<{ messageId: string; timestamp: Date } | null>(null);
 
     const loadConversation = async () => {
         try {
@@ -226,7 +229,7 @@ function Conversation({ user, conversationId, onBack }: Props) {
         joinConversation(conversationId);
 
         // Subscribe to conversation history
-        const unsubHistory = subscribeToHistory(({ messages: historyMessages }) => {
+        const unsubHistory = subscribeToHistory(({ messages: historyMessages, lastReadMessage }) => {
             const formattedMessages: Message[] = historyMessages.map((message) => ({
                 messageId: message.id,
                 conversationId,
@@ -240,6 +243,15 @@ function Conversation({ user, conversationId, onBack }: Props) {
                 },
             }));
             setMessages(formattedMessages);
+
+            // Store the last read message ID and timestamp from server
+            if (lastReadMessage) {
+                lastMarkedAsReadRef.current = {
+                    messageId: lastReadMessage.id,
+                    timestamp: new Date(lastReadMessage.timestamp),
+                };
+            }
+
             setLoading(false);
         });
 
@@ -263,6 +275,15 @@ function Conversation({ user, conversationId, onBack }: Props) {
         // Subscribe to typing events
         const unsubTyping = subscribeToTyping(handleTypingUpdate);
 
+        // Subscribe to read updates
+        const unsubReadUpdate = subscribeToReadUpdate(({ lastReadMessage }) => {
+            // Update our tracking when server confirms the read
+            lastMarkedAsReadRef.current = {
+                messageId: lastReadMessage.id,
+                timestamp: new Date(lastReadMessage.timestamp),
+            };
+        });
+
         // Load conversation metadata
         loadConversation();
 
@@ -271,6 +292,7 @@ function Conversation({ user, conversationId, onBack }: Props) {
             unsubHistory();
             unsubNewMsg();
             unsubTyping();
+            unsubReadUpdate();
 
             // Clear typing timeouts using captured ref value
             timeoutsMap.forEach((timeout) => clearTimeout(timeout));
@@ -290,11 +312,44 @@ function Conversation({ user, conversationId, onBack }: Props) {
     const availableHeight = Math.max(1, terminalHeight - reservedLines);
     const messagesViewHeight = Math.min(availableHeight, MAX_VISIBLE_MESSAGES);
 
+    // Calculate visible messages using the same height calculation
+    const visibleMessages = messages.slice(scrollOffset, scrollOffset + messagesViewHeight);
+    const hasScrollUp = scrollOffset > 0;
+    const hasScrollDown = scrollOffset + messagesViewHeight < messages.length;
+
+    // Get connection status indicator
+    const connectionStatus = !isConnected ? ' • Connecting...' : '';
+
     // Auto-scroll to bottom when new messages arrive
     useEffect(() => {
         messagesEndRef.current = messages.length;
         setScrollOffset(Math.max(0, messages.length - messagesViewHeight));
     }, [messages.length, messagesViewHeight]);
+
+    // Mark messages as read when they become visible
+    useEffect(() => {
+        if (!isConnected || visibleMessages.length === 0) return;
+
+        // Find the last visible message that isn't from the current user or system
+        const lastVisibleMessage = visibleMessages.findLast(
+            ({ authorId }) => authorId !== user.userId && authorId !== 'system'
+        );
+
+        if (!lastVisibleMessage) return;
+
+        const { messageId, createdAt } = lastVisibleMessage;
+        const messageTimestamp = new Date(createdAt);
+
+        // Only mark as read if it's a newer message than what we've already marked
+        if (lastMarkedAsReadRef.current?.messageId === messageId) return;
+
+        // Check if this message is newer than our last marked message
+        const isNewer = !lastMarkedAsReadRef.current || messageTimestamp > lastMarkedAsReadRef.current.timestamp;
+
+        if (isNewer) {
+            markMessageAsRead(conversationId, messageId);
+        }
+    }, [visibleMessages, isConnected, conversationId, user.userId, markMessageAsRead]);
 
     useInput((_input, key) => {
         if (key.escape) {
@@ -331,14 +386,6 @@ function Conversation({ user, conversationId, onBack }: Props) {
             </Box>
         );
     }
-
-    // Get connection status indicator
-    const connectionStatus = !isConnected ? ' • Connecting...' : '';
-
-    // Calculate visible messages using the same height calculation
-    const visibleMessages = messages.slice(scrollOffset, scrollOffset + messagesViewHeight);
-    const hasScrollUp = scrollOffset > 0;
-    const hasScrollDown = scrollOffset + messagesViewHeight < messages.length;
 
     return (
         <Box flexDirection="column" height="100%">

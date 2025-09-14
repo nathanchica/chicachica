@@ -41,6 +41,7 @@ type WebSocketContextValue = {
             lastReadMessage: MessagePayload | null;
         }) => void
     ) => () => void;
+    subscribeToReadUpdate: (callback: (data: { lastReadMessage: MessagePayload }) => void) => () => void;
 };
 
 const WebSocketContext = createContext<WebSocketContextValue | null>(null);
@@ -205,6 +206,13 @@ function WebSocketProvider({ children }: Props) {
         };
     };
 
+    const subscribeToReadUpdate = (callback: (data: { lastReadMessage: MessagePayload }) => void) => {
+        socketRef.current?.on('message_read_updated', callback);
+        return () => {
+            socketRef.current?.off('message_read_updated', callback);
+        };
+    };
+
     // Cleanup on unmount
     useEffect(() => {
         return () => {
@@ -226,6 +234,7 @@ function WebSocketProvider({ children }: Props) {
         subscribeToTyping,
         subscribeToMetaUpdates,
         subscribeToHistory,
+        subscribeToReadUpdate,
     };
 
     return <WebSocketContext.Provider value={value}>{children}</WebSocketContext.Provider>;

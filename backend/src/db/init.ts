@@ -29,11 +29,11 @@ async function initializeDatabase(skipPrompt = false) {
 
     // Check if tables exist
     const existingTables = await sql`
-    SELECT table_name 
-    FROM information_schema.tables 
-    WHERE table_schema = 'public' 
-    AND table_name IN ('users', 'conversations', 'messages', 'conversation_participants')
-  `;
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+      AND table_name IN ('users', 'conversations', 'messages', 'conversation_participants')
+    `;
 
     // Prompt for confirmation if tables exist and not skipping prompt
     if (!skipPrompt && existingTables.length > 0) {
@@ -68,54 +68,54 @@ async function initializeDatabase(skipPrompt = false) {
         // Create users table
         console.log('Creating users table...');
         await sql`
-      CREATE TABLE users (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        display_name VARCHAR(255) NOT NULL,
-        email VARCHAR(255) UNIQUE,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        status user_status DEFAULT 'offline',
-        last_seen TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      )
-    `;
+          CREATE TABLE users (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            display_name VARCHAR(255) NOT NULL,
+            email VARCHAR(255) UNIQUE,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            status user_status DEFAULT 'offline',
+            last_seen TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          )
+        `;
 
         // Create conversations table
         console.log('Creating conversations table...');
         await sql`
-      CREATE TABLE conversations (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        title VARCHAR(255),
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        created_by UUID REFERENCES users(id) ON DELETE SET NULL
-      )
-    `;
+          CREATE TABLE conversations (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            title VARCHAR(255),
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            created_by UUID REFERENCES users(id) ON DELETE SET NULL
+          )
+        `;
 
         // Create messages table
         console.log('Creating messages table...');
         await sql`
-      CREATE TABLE messages (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-        author_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        content TEXT NOT NULL,
-        timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        edited_at TIMESTAMP WITH TIME ZONE,
-        is_deleted BOOLEAN DEFAULT FALSE,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      )
-    `;
+          CREATE TABLE messages (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+            author_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            content TEXT NOT NULL,
+            timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            edited_at TIMESTAMP WITH TIME ZONE,
+            is_deleted BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          )
+        `;
 
         // Create conversation_participants table
         console.log('Creating conversation_participants table...');
         await sql`
-      CREATE TABLE conversation_participants (
-        conversation_id UUID REFERENCES conversations(id) ON DELETE CASCADE,
-        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-        joined_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        last_read_message_id UUID REFERENCES messages(id) ON DELETE SET NULL,
-        is_admin BOOLEAN DEFAULT FALSE,
-        PRIMARY KEY (conversation_id, user_id)
-      )
-    `;
+          CREATE TABLE conversation_participants (
+            conversation_id UUID REFERENCES conversations(id) ON DELETE CASCADE,
+            user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+            joined_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            last_read_message_id UUID REFERENCES messages(id) ON DELETE SET NULL,
+            is_admin BOOLEAN DEFAULT FALSE,
+            PRIMARY KEY (conversation_id, user_id)
+          )
+        `;
 
         // Create indexes
         console.log('Creating indexes...');
@@ -130,11 +130,11 @@ async function initializeDatabase(skipPrompt = false) {
 
         // Verify tables were created
         const tables = await sql`
-      SELECT table_name 
-      FROM information_schema.tables 
-      WHERE table_schema = 'public' 
-      ORDER BY table_name
-    `;
+          SELECT table_name 
+          FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          ORDER BY table_name
+        `;
 
         console.log(`Created ${tables.length} tables:`, tables.map((t) => t.table_name).join(', '));
     } catch (error) {
