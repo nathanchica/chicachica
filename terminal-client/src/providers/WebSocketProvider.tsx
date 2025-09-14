@@ -45,11 +45,19 @@ type WebSocketContextValue = {
 
 const WebSocketContext = createContext<WebSocketContextValue | null>(null);
 
+export function useWebSocket() {
+    const context = useContext(WebSocketContext);
+    if (!context) {
+        throw new Error('useWebSocket must be used within a WebSocketProvider');
+    }
+    return context;
+}
+
 type Props = {
     children: ReactNode;
 };
 
-export function WebSocketProvider({ children }: Props) {
+function WebSocketProvider({ children }: Props) {
     const [isConnected, setIsConnected] = useState(false);
     const socketRef = useRef<Socket | null>(null);
     const currentConversationRef = useRef<string | null>(null);
@@ -223,10 +231,4 @@ export function WebSocketProvider({ children }: Props) {
     return <WebSocketContext.Provider value={value}>{children}</WebSocketContext.Provider>;
 }
 
-export function useWebSocket() {
-    const context = useContext(WebSocketContext);
-    if (!context) {
-        throw new Error('useWebSocket must be used within a WebSocketProvider');
-    }
-    return context;
-}
+export default WebSocketProvider;

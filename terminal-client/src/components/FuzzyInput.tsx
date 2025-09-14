@@ -37,24 +37,6 @@ function FuzzyInput<T>({
         includeScore: true,
     });
 
-    useEffect(() => {
-        if (query.startsWith('/')) {
-            // Show available commands
-            setShowCommands(true);
-            setSuggestions([]);
-        } else if (query.trim()) {
-            // Perform fuzzy search
-            setShowCommands(false);
-            const results = fuse.search(query);
-            setSuggestions(results.slice(0, maxSuggestions).map((r) => r.item));
-        } else {
-            // Show top items when empty
-            setShowCommands(false);
-            setSuggestions(items.slice(0, maxSuggestions));
-        }
-        setHighlightedIndex(0);
-    }, [query, items]); // eslint-disable-line react-hooks/exhaustive-deps
-
     const handleSubmit = (value: string) => {
         if (value.startsWith('/')) {
             // Handle command
@@ -94,6 +76,24 @@ function FuzzyInput<T>({
             }
         }
     });
+
+    useEffect(() => {
+        if (query.startsWith('/')) {
+            // Show available commands
+            setShowCommands(true);
+            setSuggestions([]);
+        } else if (query.trim()) {
+            // Perform fuzzy search
+            setShowCommands(false);
+            const results = fuse.search(query);
+            setSuggestions(results.slice(0, maxSuggestions).map((r) => r.item));
+        } else {
+            // Show top items when empty
+            setShowCommands(false);
+            setSuggestions(items.slice(0, maxSuggestions));
+        }
+        setHighlightedIndex(0);
+    }, [query, items]); // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
         <Box flexDirection="column">
