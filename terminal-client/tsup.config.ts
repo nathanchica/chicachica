@@ -9,9 +9,6 @@ export default defineConfig({
     minify: false,
     sourcemap: true,
     shims: true,
-    banner: {
-        js: '#!/usr/bin/env node',
-    },
     esbuildOptions(options) {
         options.jsx = 'automatic';
     },
