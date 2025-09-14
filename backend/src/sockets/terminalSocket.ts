@@ -45,12 +45,11 @@ export function createTerminalSocketHandler() {
 
                     // Spawn the terminal process
                     if (isProduction) {
-                        // In production, make executable and run directly
+                        // In production, run the ESM module with node
                         const cliPath = path.join(terminalClientPath, 'dist', 'cli.js');
                         console.log('CLI path:', cliPath);
 
-                        // Make the file executable and run it
-                        ptyProcess = spawn('sh', ['-c', `chmod +x ${cliPath} && ${cliPath}`], {
+                        ptyProcess = spawn('node', [cliPath], {
                             name: 'xterm-color',
                             cols: 80,
                             rows: 30,
