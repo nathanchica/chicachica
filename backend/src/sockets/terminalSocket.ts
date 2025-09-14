@@ -27,8 +27,12 @@ export function createTerminalSocketHandler() {
                         terminalSessions.delete(socket.id);
                     }
 
-                    const terminalClientPath = path.join(__dirname, '../../../terminal-client');
                     const isProduction = env.NODE_ENV === 'production';
+
+                    // Different paths for production (Render) vs development
+                    const terminalClientPath = isProduction
+                        ? path.join(__dirname, '../terminal-client') // In production on Render, backend is root, so terminal-client is at ./terminal-client
+                        : path.join(__dirname, '../../../terminal-client'); // In development, we're in backend/src/sockets
 
                     // Use SERVER_URL from env config
                     const backendUrl = env.SERVER_URL || `http://localhost:${env.PORT}`;
