@@ -31,7 +31,7 @@ export function createTerminalSocketHandler() {
 
                     // Different paths for production (Render) vs development
                     const terminalClientPath = isProduction
-                        ? path.join(__dirname, '../terminal-client') // In production on Render, backend is root, so terminal-client is at ./terminal-client
+                        ? path.join(__dirname, '../../terminal-client') // In production: from dist/sockets to terminal-client (sibling of dist)
                         : path.join(__dirname, '../../../terminal-client'); // In development, we're in backend/src/sockets
 
                     // Use SERVER_URL from env config
