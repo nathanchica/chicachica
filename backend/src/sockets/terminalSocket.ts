@@ -45,11 +45,12 @@ export function createTerminalSocketHandler() {
 
                     // Spawn the terminal process
                     if (isProduction) {
-                        // In production, run the built version using full path
+                        // In production, make executable and run directly
                         const cliPath = path.join(terminalClientPath, 'dist', 'cli.js');
                         console.log('CLI path:', cliPath);
 
-                        ptyProcess = spawn('node', [cliPath], {
+                        // Make the file executable and run it
+                        ptyProcess = spawn('sh', ['-c', `chmod +x ${cliPath} && ${cliPath}`], {
                             name: 'xterm-color',
                             cols: 80,
                             rows: 30,
