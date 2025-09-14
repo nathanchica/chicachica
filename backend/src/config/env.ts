@@ -8,6 +8,7 @@ const envSchema = z.object({
     PORT: z.string().default('3001').transform(Number),
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
     CLIENT_URL: z.url('Invalid CLIENT_URL format').default('http://localhost:5173'),
+    SERVER_URL: z.url('Invalid SERVER_URL format').optional().default('http://localhost:3001'),
 });
 
 const envResult = envSchema.safeParse(process.env);

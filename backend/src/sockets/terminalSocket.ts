@@ -4,6 +4,8 @@ import { fileURLToPath } from 'url';
 import { spawn, IPty } from 'node-pty';
 import { Namespace, Socket } from 'socket.io';
 
+import { env } from '../config/env.js';
+
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -26,7 +28,11 @@ export function createTerminalSocketHandler() {
                     }
 
                     const terminalClientPath = path.join(__dirname, '../../../terminal-client');
-                    const isProduction = process.env.NODE_ENV === 'production';
+                    const isProduction = env.NODE_ENV === 'production';
+
+                    // Use SERVER_URL from env config
+                    const backendUrl = env.SERVER_URL || `http://localhost:${env.PORT}`;
+                    const websocketUrl = backendUrl.replace(/^http/, 'ws');
 
                     // Spawn the terminal process
                     if (isProduction) {
@@ -38,8 +44,8 @@ export function createTerminalSocketHandler() {
                             cwd: terminalClientPath,
                             env: {
                                 ...process.env,
-                                BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:3001',
-                                WEBSOCKET_URL: process.env.WEBSOCKET_URL || 'ws://localhost:3001',
+                                BACKEND_URL: backendUrl,
+                                WEBSOCKET_URL: websocketUrl,
                             },
                         });
                     } else {
@@ -51,8 +57,8 @@ export function createTerminalSocketHandler() {
                             cwd: terminalClientPath,
                             env: {
                                 ...process.env,
-                                BACKEND_URL: 'http://localhost:3001',
-                                WEBSOCKET_URL: 'ws://localhost:3001',
+                                BACKEND_URL: backendUrl,
+                                WEBSOCKET_URL: websocketUrl,
                             },
                         });
                     }
@@ -73,7 +79,7 @@ export function createTerminalSocketHandler() {
                     });
 
                     // Send initial success message
-                    socket.emit('terminal-output', '\r\n🔥 ChicaChica Terminal Client\r\n\r\n');
+                    socket.emit('terminal-output', '\r\nChicaChica Terminal Client\r\n\r\n');
                 } catch (error) {
                     console.error('Failed to spawn terminal:', error);
                     socket.emit('terminal-error', 'Failed to start terminal process');
