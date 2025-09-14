@@ -58,6 +58,10 @@ export default [
                 fetch: 'readonly',
                 URL: 'readonly',
                 URLSearchParams: 'readonly',
+                RequestInit: 'readonly',
+                Response: 'readonly',
+                Request: 'readonly',
+                Headers: 'readonly',
                 React: 'readonly',
                 // DOM types
                 HTMLDivElement: 'readonly',
@@ -73,6 +77,8 @@ export default [
                 // Storage
                 localStorage: 'readonly',
                 sessionStorage: 'readonly',
+                // Node.js types
+                NodeJS: 'readonly',
             },
         },
         plugins: {
