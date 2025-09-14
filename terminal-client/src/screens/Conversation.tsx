@@ -312,6 +312,14 @@ function Conversation({ user, conversationId, onBack }: Props) {
     const availableHeight = Math.max(1, terminalHeight - reservedLines);
     const messagesViewHeight = Math.min(availableHeight, MAX_VISIBLE_MESSAGES);
 
+    // Calculate visible messages using the same height calculation
+    const visibleMessages = messages.slice(scrollOffset, scrollOffset + messagesViewHeight);
+    const hasScrollUp = scrollOffset > 0;
+    const hasScrollDown = scrollOffset + messagesViewHeight < messages.length;
+
+    // Get connection status indicator
+    const connectionStatus = !isConnected ? ' • Connecting...' : '';
+
     // Auto-scroll to bottom when new messages arrive
     useEffect(() => {
         messagesEndRef.current = messages.length;
@@ -320,16 +328,12 @@ function Conversation({ user, conversationId, onBack }: Props) {
 
     // Mark messages as read when they become visible
     useEffect(() => {
-        if (!isConnected || messages.length === 0) return;
-
-        // Calculate currently visible messages
-        const visibleMessageSlice = messages.slice(scrollOffset, scrollOffset + messagesViewHeight);
-        if (visibleMessageSlice.length === 0) return;
+        if (!isConnected || visibleMessages.length === 0) return;
 
         // Find the last visible message that isn't from the current user or system
-        const lastVisibleMessage = visibleMessageSlice
-            .filter(({ authorId }) => authorId !== user.userId && authorId !== 'system')
-            .pop();
+        const lastVisibleMessage = visibleMessages.findLast(
+            ({ authorId }) => authorId !== user.userId && authorId !== 'system'
+        );
 
         if (!lastVisibleMessage) return;
 
@@ -344,9 +348,8 @@ function Conversation({ user, conversationId, onBack }: Props) {
 
         if (isNewer) {
             markMessageAsRead(conversationId, messageId);
-            // Note: We don't update lastMarkedAsReadRef here because we wait for server confirmation
         }
-    }, [scrollOffset, messages, messagesViewHeight, isConnected, conversationId, user.userId, markMessageAsRead]);
+    }, [visibleMessages, isConnected, conversationId, user.userId, markMessageAsRead]);
 
     useInput((_input, key) => {
         if (key.escape) {
@@ -383,14 +386,6 @@ function Conversation({ user, conversationId, onBack }: Props) {
             </Box>
         );
     }
-
-    // Get connection status indicator
-    const connectionStatus = !isConnected ? ' • Connecting...' : '';
-
-    // Calculate visible messages using the same height calculation
-    const visibleMessages = messages.slice(scrollOffset, scrollOffset + messagesViewHeight);
-    const hasScrollUp = scrollOffset > 0;
-    const hasScrollDown = scrollOffset + messagesViewHeight < messages.length;
 
     return (
         <Box flexDirection="column" height="100%">
