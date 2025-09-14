@@ -6,7 +6,9 @@
     "type": "module",
     "scripts": {
         "dev": "tsx watch src/index.ts",
-        "build": "tsc",
+        "build": "npm run build:backend && npm run build:terminal-client",
+        "build:backend": "tsc",
+        "build:terminal-client": "cd ../terminal-client && npm install && npm run build",
         "start": "node dist/index.js",
         "typecheck": "tsc --noEmit",
         "db:init": "tsx src/db/init.ts",
