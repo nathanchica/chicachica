@@ -38,39 +38,31 @@ export function createTerminalSocketHandler() {
                     const backendUrl = env.SERVER_URL || `http://localhost:${env.PORT}`;
                     const websocketUrl = backendUrl.replace(/^http/, 'ws');
 
-                    // Log for debugging
-                    console.log('Terminal client path:', terminalClientPath);
-                    console.log('__dirname:', __dirname);
-                    console.log('NODE_ENV:', env.NODE_ENV);
+                    // Common spawn options
+                    const commonSpawnOptions = {
+                        name: 'xterm-256color',
+                        cols: 80,
+                        rows: 30,
+                        env: {
+                            ...process.env,
+                            BACKEND_URL: backendUrl,
+                            WEBSOCKET_URL: websocketUrl,
+                            TERM: 'xterm-256color',
+                            COLORTERM: 'truecolor',
+                            FORCE_COLOR: '3',
+                        },
+                    };
 
                     // Spawn the terminal process
                     if (isProduction) {
                         // In production, run the ESM module with node
                         const cliPath = path.join(terminalClientPath, 'dist', 'cli.js');
-                        console.log('CLI path:', cliPath);
-
-                        ptyProcess = spawn('node', [cliPath], {
-                            name: 'xterm-color',
-                            cols: 80,
-                            rows: 30,
-                            env: {
-                                ...process.env,
-                                BACKEND_URL: backendUrl,
-                                WEBSOCKET_URL: websocketUrl,
-                            },
-                        });
+                        ptyProcess = spawn('node', [cliPath], commonSpawnOptions);
                     } else {
                         // In development, use tsx to run TypeScript directly
                         ptyProcess = spawn('npx', ['tsx', 'src/cli.tsx'], {
-                            name: 'xterm-color',
-                            cols: 80,
-                            rows: 30,
+                            ...commonSpawnOptions,
                             cwd: terminalClientPath,
-                            env: {
-                                ...process.env,
-                                BACKEND_URL: backendUrl,
-                                WEBSOCKET_URL: websocketUrl,
-                            },
                         });
                     }
 
