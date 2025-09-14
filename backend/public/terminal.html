@@ -191,7 +191,11 @@
 
         function connectTerminal() {
             // Connect to the terminal namespace
-            socket = io('/terminal');
+            socket = io('/terminal', {
+                transports: ['websocket'], // Use only websocket for better performance
+                reconnectionDelay: 1000,
+                reconnectionDelayMax: 5000,
+            });
 
             socket.on('connect', () => {
                 console.log('Terminal socket connected');
@@ -199,15 +203,16 @@
                 clearMessage();
                 reconnectAttempts = 0;
 
-                // Fit terminal again after connection
+                // Wait for terminal to be fully ready before initializing
                 setTimeout(() => {
                     fitAddon.fit();
-                    // Focus terminal after connection
                     term.focus();
-                }, 50);
 
-                // Request terminal initialization immediately (no auth needed)
-                socket.emit('terminal-init');
+                    // Send terminal dimensions with init
+                    const { cols, rows } = term;
+                    socket.emit('terminal-init');
+                    socket.emit('terminal-resize', { cols, rows });
+                }, 200); // Increased delay for proper initialization
             });
 
             socket.on('disconnect', () => {
@@ -241,10 +246,36 @@
                 }
             });
 
-            // Send terminal input to server
+            // Buffer terminal input to prevent race conditions
+            let inputBuffer = [];
+            let sendTimeout = null;
+
+            const flushInput = () => {
+                if (inputBuffer.length > 0 && socket && socket.connected) {
+                    socket.emit('terminal-input', inputBuffer.join(''));
+                    inputBuffer = [];
+                }
+                sendTimeout = null;
+            };
+
+            // Send terminal input to server with buffering
             term.onData((data) => {
                 if (socket && socket.connected) {
-                    socket.emit('terminal-input', data);
+                    inputBuffer.push(data);
+
+                    // Clear existing timeout
+                    if (sendTimeout) {
+                        clearTimeout(sendTimeout);
+                    }
+
+                    // Send immediately for single characters, batch for rapid input
+                    if (data.length === 1) {
+                        // Single character - send with tiny delay to catch rapid typing
+                        sendTimeout = setTimeout(flushInput, 5);
+                    } else {
+                        // Multi-character paste or special keys - send immediately
+                        flushInput();
+                    }
                 }
             });
 
@@ -265,14 +296,27 @@
                 return;
             }
 
+            // Show loading message
+            showMessage('Initializing terminal...', 'info');
+
             term.open(terminalElement);
 
-            // Initial fit with a small delay to ensure DOM is ready
-            setTimeout(() => {
-                fitAddon.fit();
-                // Focus the terminal after fitting
-                term.focus();
-            }, 100);
+            // Wait for fonts to load before fitting
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(() => {
+                    fitAddon.fit();
+                    term.focus();
+                    // Connect after terminal is ready
+                    connectTerminal();
+                });
+            } else {
+                // Fallback for browsers that don't support font loading API
+                setTimeout(() => {
+                    fitAddon.fit();
+                    term.focus();
+                    connectTerminal();
+                }, 300);
+            }
 
             // Handle window resize with debouncing
             let resizeTimeout;
@@ -280,7 +324,7 @@
                 clearTimeout(resizeTimeout);
                 resizeTimeout = setTimeout(() => {
                     fitAddon.fit();
-                }, 100);
+                }, 150); // Slightly longer debounce for smoother resizing
             };
 
             window.addEventListener('resize', handleResize);
@@ -295,12 +339,6 @@
             document.getElementById('terminal-container').addEventListener('click', () => {
                 term.focus();
             });
-
-            // Connect to terminal
-            connectTerminal();
-
-            // Initial message
-            showMessage('Connecting to terminal server...', 'info');
         });
 
         // Clean up on page unload
