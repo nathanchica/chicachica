@@ -38,14 +38,21 @@ export function createTerminalSocketHandler() {
                     const backendUrl = env.SERVER_URL || `http://localhost:${env.PORT}`;
                     const websocketUrl = backendUrl.replace(/^http/, 'ws');
 
+                    // Log for debugging
+                    console.log('Terminal client path:', terminalClientPath);
+                    console.log('__dirname:', __dirname);
+                    console.log('NODE_ENV:', env.NODE_ENV);
+
                     // Spawn the terminal process
                     if (isProduction) {
-                        // In production, run the built version
-                        ptyProcess = spawn('node', ['dist/cli.js'], {
+                        // In production, run the built version using full path
+                        const cliPath = path.join(terminalClientPath, 'dist', 'cli.js');
+                        console.log('CLI path:', cliPath);
+
+                        ptyProcess = spawn('node', [cliPath], {
                             name: 'xterm-color',
                             cols: 80,
                             rows: 30,
-                            cwd: terminalClientPath,
                             env: {
                                 ...process.env,
                                 BACKEND_URL: backendUrl,
