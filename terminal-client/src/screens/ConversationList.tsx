@@ -5,6 +5,7 @@ import { Box, Text, useInput } from 'ink';
 import { User } from '../App.js';
 import FuzzyInput from '../components/FuzzyInput.js';
 import LoadingSpinner from '../components/LoadingSpinner.js';
+import { useWebSocket } from '../providers/WebSocketProvider.js';
 import { Conversation, getConversations } from '../services/api.js';
 
 type Props = {
@@ -14,9 +15,22 @@ type Props = {
 };
 
 function ConversationList({ user, onConversationSelected, onLogout }: Props) {
+    const { subscribeToMetaUpdates, isConnected } = useWebSocket();
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    const commands = {
+        '/new': 'Create new conversation',
+        '/logout': 'Logout',
+        '/refresh': 'Refresh conversations',
+    };
+
+    // Create search keys for fuzzy search
+    const searchableConversations = conversations.map((conv) => ({
+        ...conv,
+        searchText: [conv.title || '', ...(conv.participants?.map((p) => p.displayName) || [])].join(' '),
+    }));
 
     const loadConversations = async () => {
         try {
@@ -121,6 +135,39 @@ function ConversationList({ user, onConversationSelected, onLogout }: Props) {
         loadConversations();
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+    // Subscribe to real-time conversation updates
+    useEffect(() => {
+        if (!isConnected) return;
+
+        const unsubscribe = subscribeToMetaUpdates(({ conversationId, lastMessage, unreadCount }) => {
+            setConversations((prevConversations) =>
+                prevConversations.map((conv) => {
+                    if (conv.conversationId === conversationId) {
+                        return {
+                            ...conv,
+                            lastMessage: {
+                                messageId: lastMessage.id,
+                                conversationId,
+                                authorId: lastMessage.author.id,
+                                content: lastMessage.content,
+                                createdAt: lastMessage.timestamp.toString(),
+                                updatedAt: lastMessage.timestamp.toString(),
+                                author: {
+                                    userId: lastMessage.author.id,
+                                    displayName: lastMessage.author.displayName,
+                                },
+                            },
+                            unreadCount,
+                        };
+                    }
+                    return conv;
+                })
+            );
+        });
+
+        return unsubscribe;
+    }, [isConnected, subscribeToMetaUpdates]);
+
     useInput((_input, key) => {
         if (key.escape) {
             onLogout();
@@ -140,24 +187,13 @@ function ConversationList({ user, onConversationSelected, onLogout }: Props) {
         );
     }
 
-    const commands = {
-        '/new': 'Create new conversation',
-        '/logout': 'Logout',
-        '/refresh': 'Refresh conversations',
-    };
-
-    // Create search keys for fuzzy search
-    const searchableConversations = conversations.map((conv) => ({
-        ...conv,
-        searchText: [conv.title || '', ...(conv.participants?.map((p) => p.displayName) || [])].join(' '),
-    }));
-
     return (
         <Box flexDirection="column">
             <Box borderStyle="single" paddingX={1} marginBottom={1}>
                 <Text bold>Conversations</Text>
                 <Text> • </Text>
                 <Text color="cyan">{user.displayName}</Text>
+                {!isConnected && <Text color="yellow"> • Connecting...</Text>}
             </Box>
 
             {conversations.length === 0 ? (

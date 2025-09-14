@@ -5,7 +5,7 @@ import TextInput from 'ink-text-input';
 
 import { User } from '../App.js';
 import LoadingSpinner from '../components/LoadingSpinner.js';
-import { useWebSocket } from '../hooks/useWebSocket.js';
+import { useWebSocket } from '../providers/WebSocketProvider.js';
 import { Message, getConversation, Conversation as ConversationType } from '../services/api.js';
 
 // Date formatting utilities
@@ -69,7 +69,7 @@ const LAYOUT_CONSTANTS = {
 };
 
 // Maximum messages to render at once
-const MAX_VISIBLE_MESSAGES = 15; // Adjust this to control max messages shown
+const MAX_VISIBLE_MESSAGES = 12; // Adjust this to control max messages shown
 
 const PAGE_SCROLL_AMOUNT = 10; // Number of messages to scroll on page up/down
 
@@ -100,6 +100,7 @@ function Conversation({ user, conversationId, onBack }: Props) {
     const typingTimeoutRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
     const [scrollOffset, setScrollOffset] = useState(0);
     const messagesEndRef = useRef<number>(0);
+    const [showCommands, setShowCommands] = useState(false);
 
     const loadConversation = async () => {
         try {
@@ -165,6 +166,32 @@ function Conversation({ user, conversationId, onBack }: Props) {
     const handleSendMessage = (text: string) => {
         if (!text.trim() || sending || !isConnected) return;
 
+        // Check for commands
+        const trimmedText = text.trim();
+        if (trimmedText === '/participants' || trimmedText === '/p') {
+            // Create a local-only command result message
+            const participantNames =
+                conversation?.participants?.map((p) => p.displayName).join(', ') || 'No participants';
+            const commandResultMessage: Message = {
+                messageId: `cmd-${Date.now()}`,
+                conversationId,
+                authorId: 'system',
+                content: `(Only visible to you) Participants (${conversation?.participantIds.length || 0}): ${participantNames}`,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                author: {
+                    userId: 'system',
+                    displayName: 'System',
+                },
+            };
+
+            // Add to messages array (local only, not persisted)
+            setMessages((prevMessages) => [...prevMessages, commandResultMessage]);
+            setInputValue('');
+            setShowCommands(false);
+            return;
+        }
+
         setSending(true);
         stopTyping(conversationId);
         sendSocketMessage(conversationId, text);
@@ -174,7 +201,15 @@ function Conversation({ user, conversationId, onBack }: Props) {
 
     const handleInputChange = (value: string) => {
         setInputValue(value);
-        if (value.trim() && isConnected) {
+
+        // Show commands when user types '/'
+        if (value === '/') {
+            setShowCommands(true);
+        } else if (showCommands && !value.startsWith('/')) {
+            setShowCommands(false);
+        }
+
+        if (value.trim() && isConnected && !value.startsWith('/')) {
             startTyping(conversationId);
         } else {
             stopTyping(conversationId);
@@ -262,19 +297,24 @@ function Conversation({ user, conversationId, onBack }: Props) {
     }, [messages.length, messagesViewHeight]);
 
     useInput((_input, key) => {
-        if (key.escape && !inputValue) {
-            onBack();
+        if (key.escape) {
+            if (showCommands) {
+                setShowCommands(false);
+                setInputValue('');
+            } else if (!inputValue) {
+                onBack();
+            }
         }
 
         const maxScroll = Math.max(0, messages.length - messagesViewHeight);
 
-        if (key.upArrow && !inputValue) {
+        if (key.upArrow && !inputValue && !showCommands) {
             setScrollOffset((currentOffset) => Math.max(0, currentOffset - 1));
-        } else if (key.downArrow && !inputValue) {
+        } else if (key.downArrow && !inputValue && !showCommands) {
             setScrollOffset((currentOffset) => Math.min(maxScroll, currentOffset + 1));
-        } else if (key.pageUp) {
+        } else if (key.pageUp && !showCommands) {
             setScrollOffset((currentOffset) => Math.max(0, currentOffset - PAGE_SCROLL_AMOUNT));
-        } else if (key.pageDown) {
+        } else if (key.pageDown && !showCommands) {
             setScrollOffset((currentOffset) => Math.min(maxScroll, currentOffset + PAGE_SCROLL_AMOUNT));
         }
     });
@@ -309,9 +349,26 @@ function Conversation({ user, conversationId, onBack }: Props) {
                 {connectionStatus && <Text color="yellow">{connectionStatus}</Text>}
             </Box>
 
-            {/* Scrollable Messages Area */}
+            {/* Scrollable Messages Area or Commands */}
             <Box flexDirection="column" flexGrow={1} paddingX={1} overflow="hidden">
-                {messages.length === 0 ? (
+                {showCommands ? (
+                    <Box flexDirection="column">
+                        <Text bold color="yellow">
+                            Available Commands:
+                        </Text>
+                        <Box marginTop={1} flexDirection="column">
+                            <Box>
+                                <Text color="cyan">/participants</Text>
+                                <Text> or </Text>
+                                <Text color="cyan">/p</Text>
+                                <Text> - Show conversation participants</Text>
+                            </Box>
+                        </Box>
+                        <Box marginTop={2}>
+                            <Text dimColor>Press ESC to cancel</Text>
+                        </Box>
+                    </Box>
+                ) : messages.length === 0 ? (
                     <Text dimColor>No messages yet. Start the conversation!</Text>
                 ) : (
                     <Box flexDirection="column">
@@ -325,18 +382,21 @@ function Conversation({ user, conversationId, onBack }: Props) {
                         {visibleMessages.map((message, index) => {
                             const { messageId, authorId, content, createdAt, author } = message;
                             const isOwnMessage = authorId === user.userId;
+                            const isSystemMessage = authorId === 'system';
                             const timestamp = new Date(createdAt).toLocaleTimeString('en-US', {
                                 hour: '2-digit',
                                 minute: '2-digit',
                             });
 
-                            // Check if we need a date divider
+                            // Check if we need a date divider (skip for system messages)
                             const currentMessageDate = getMessageDate(createdAt);
                             const previousMessage = index > 0 ? visibleMessages[index - 1] : null;
                             const previousMessageDate = previousMessage
                                 ? getMessageDate(previousMessage.createdAt)
                                 : null;
-                            const showDateDivider = !previousMessageDate || currentMessageDate !== previousMessageDate;
+                            const showDateDivider =
+                                !isSystemMessage &&
+                                (!previousMessageDate || currentMessageDate !== previousMessageDate);
 
                             return (
                                 <Box key={messageId} flexDirection="column">
@@ -353,12 +413,27 @@ function Conversation({ user, conversationId, onBack }: Props) {
                                     <Box>
                                         <Box>
                                             <Text dimColor>[{timestamp}] </Text>
-                                            <Text bold color={isOwnMessage ? 'green' : 'cyan'}>
-                                                {isOwnMessage ? 'You' : author?.displayName || 'Unknown'}
+                                            <Text
+                                                bold
+                                                color={isSystemMessage ? 'magenta' : isOwnMessage ? 'green' : 'cyan'}
+                                            >
+                                                {isSystemMessage
+                                                    ? 'System'
+                                                    : isOwnMessage
+                                                      ? 'You'
+                                                      : author?.displayName || 'Unknown'}
                                             </Text>
                                         </Box>
-                                        <Box marginLeft={2}>
-                                            <Text>{content}</Text>
+                                        <Box marginLeft={2} flexDirection="column">
+                                            {content.split('\n').map((line, lineIndex) => (
+                                                <Text
+                                                    key={lineIndex}
+                                                    italic={isSystemMessage}
+                                                    dimColor={isSystemMessage}
+                                                >
+                                                    {line}
+                                                </Text>
+                                            ))}
                                         </Box>
                                     </Box>
                                 </Box>
@@ -385,7 +460,9 @@ function Conversation({ user, conversationId, onBack }: Props) {
                         value={inputValue}
                         onChange={handleInputChange}
                         onSubmit={handleSendMessage}
-                        placeholder={!isConnected ? 'Connecting...' : sending ? 'Sending...' : 'Type a message...'}
+                        placeholder={
+                            !isConnected ? 'Connecting...' : sending ? 'Sending...' : 'Type a message or /command'
+                        }
                     />
                 </Box>
             </Box>
@@ -410,7 +487,7 @@ function Conversation({ user, conversationId, onBack }: Props) {
 
             {/* Help Text */}
             <Box marginTop={1} paddingX={1}>
-                <Text dimColor>ESC Back | ↑↓ Scroll By Line | PageUp/Down Scroll By 10 Lines | Ctrl+C Exit</Text>
+                <Text dimColor>ESC Back | ↑↓ Scroll | / Commands | PageUp/Down Scroll By 10 | Ctrl+C Exit</Text>
             </Box>
         </Box>
     );

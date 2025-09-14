@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import { Box, Text, useApp, useInput } from 'ink';
 
-import { WebSocketProvider } from './hooks/useWebSocket.js';
+import WebSocketProvider from './providers/WebSocketProvider.js';
 import AccountSelect from './screens/AccountSelect.js';
 import Conversation from './screens/Conversation.js';
 import ConversationList from './screens/ConversationList.js';
@@ -92,6 +92,11 @@ function App() {
                 return <Text>Unknown screen</Text>;
         }
     };
+
+    useEffect(() => {
+        // Clear terminal on screen change
+        process.stdout.write('\x1b[2J\x1b[3J\x1b[H');
+    }, [appState.currentScreen]);
 
     return (
         <WebSocketProvider>

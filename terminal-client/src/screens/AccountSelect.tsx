@@ -6,7 +6,7 @@ import { User } from '../App.js';
 import FuzzyInput from '../components/FuzzyInput.js';
 import LoadingSpinner from '../components/LoadingSpinner.js';
 import SplashScreen from '../components/SplashScreen.js';
-import { useWebSocket } from '../hooks/useWebSocket.js';
+import { useWebSocket } from '../providers/WebSocketProvider.js';
 import { getUsers, createUser } from '../services/api.js';
 
 type Props = {
