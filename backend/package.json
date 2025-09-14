@@ -6,9 +6,10 @@
     "type": "module",
     "scripts": {
         "dev": "tsx watch src/index.ts",
-        "build": "npm run build:backend && npm run build:terminal-client",
+        "build": "npm run copy:terminal-client && npm run build:backend && npm run build:terminal-client",
         "build:backend": "tsc",
-        "build:terminal-client": "cd ../terminal-client && npm install && npm run build",
+        "copy:terminal-client": "if [ ! -d terminal-client ]; then cp -r ../terminal-client . 2>/dev/null || true; fi",
+        "build:terminal-client": "if [ -d terminal-client ]; then cd terminal-client && npm install && npm run build; fi",
         "start": "node dist/index.js",
         "typecheck": "tsc --noEmit",
         "db:init": "tsx src/db/init.ts",
