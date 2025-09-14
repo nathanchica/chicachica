@@ -4,14 +4,15 @@ export default defineConfig({
     entry: ['src/cli.tsx'],
     format: ['esm'],
     target: 'node18',
-    splitting: false,
-    sourcemap: true,
+    outDir: 'dist',
     clean: true,
+    minify: false,
+    sourcemap: true,
     shims: true,
     banner: {
         js: '#!/usr/bin/env node',
     },
     esbuildOptions(options) {
-        options.platform = 'node';
+        options.jsx = 'automatic';
     },
 });

@@ -1,0 +1,110 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+import { spawn, IPty } from 'node-pty';
+import { Namespace, Socket } from 'socket.io';
+
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Store terminal sessions
+const terminalSessions = new Map<string, IPty>();
+
+export function createTerminalSocketHandler() {
+    return (terminalNamespace: Namespace) => {
+        terminalNamespace.on('connection', (socket: Socket) => {
+            let ptyProcess: IPty | null = null;
+
+            socket.on('terminal-init', () => {
+                try {
+                    // Clean up any existing session
+                    if (terminalSessions.has(socket.id)) {
+                        const existingPty = terminalSessions.get(socket.id);
+                        existingPty?.kill();
+                        terminalSessions.delete(socket.id);
+                    }
+
+                    const terminalClientPath = path.join(__dirname, '../../../terminal-client');
+                    const isProduction = process.env.NODE_ENV === 'production';
+
+                    // Spawn the terminal process
+                    if (isProduction) {
+                        // In production, run the built version
+                        ptyProcess = spawn('node', ['dist/cli.js'], {
+                            name: 'xterm-color',
+                            cols: 80,
+                            rows: 30,
+                            cwd: terminalClientPath,
+                            env: {
+                                ...process.env,
+                                BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:3001',
+                                WEBSOCKET_URL: process.env.WEBSOCKET_URL || 'ws://localhost:3001',
+                            },
+                        });
+                    } else {
+                        // In development, use tsx to run TypeScript directly
+                        ptyProcess = spawn('npx', ['tsx', 'src/cli.tsx'], {
+                            name: 'xterm-color',
+                            cols: 80,
+                            rows: 30,
+                            cwd: terminalClientPath,
+                            env: {
+                                ...process.env,
+                                BACKEND_URL: 'http://localhost:3001',
+                                WEBSOCKET_URL: 'ws://localhost:3001',
+                            },
+                        });
+                    }
+
+                    // Store the session
+                    terminalSessions.set(socket.id, ptyProcess);
+
+                    // Handle data from the terminal
+                    ptyProcess.onData((data: string) => {
+                        socket.emit('terminal-output', data);
+                    });
+
+                    // Handle terminal exit
+                    ptyProcess.onExit(({ exitCode, signal }) => {
+                        console.log(`Terminal process exited: code=${exitCode}, signal=${signal}`);
+                        socket.emit('terminal-exit', exitCode);
+                        terminalSessions.delete(socket.id);
+                    });
+
+                    // Send initial success message
+                    socket.emit('terminal-output', '\r\n🔥 ChicaChica Terminal Client\r\n\r\n');
+                } catch (error) {
+                    console.error('Failed to spawn terminal:', error);
+                    socket.emit('terminal-error', 'Failed to start terminal process');
+                }
+            });
+
+            // Handle input from the client
+            socket.on('terminal-input', (data: string) => {
+                const pty = terminalSessions.get(socket.id);
+                if (pty) {
+                    pty.write(data);
+                }
+            });
+
+            // Handle terminal resize
+            socket.on('terminal-resize', ({ cols, rows }: { cols: number; rows: number }) => {
+                const pty = terminalSessions.get(socket.id);
+                if (pty && cols > 0 && rows > 0) {
+                    pty.resize(cols, rows);
+                }
+            });
+
+            // Clean up on disconnect
+            socket.on('disconnect', () => {
+                console.log(`Terminal socket disconnected: ${socket.id}`);
+                const pty = terminalSessions.get(socket.id);
+                if (pty) {
+                    pty.kill();
+                    terminalSessions.delete(socket.id);
+                }
+            });
+        });
+    };
+}
