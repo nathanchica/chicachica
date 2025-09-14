@@ -246,36 +246,11 @@
                 }
             });
 
-            // Buffer terminal input to prevent race conditions
-            let inputBuffer = [];
-            let sendTimeout = null;
-
-            const flushInput = () => {
-                if (inputBuffer.length > 0 && socket && socket.connected) {
-                    socket.emit('terminal-input', inputBuffer.join(''));
-                    inputBuffer = [];
-                }
-                sendTimeout = null;
-            };
-
-            // Send terminal input to server with buffering
+            // Send terminal input to server immediately
             term.onData((data) => {
                 if (socket && socket.connected) {
-                    inputBuffer.push(data);
-
-                    // Clear existing timeout
-                    if (sendTimeout) {
-                        clearTimeout(sendTimeout);
-                    }
-
-                    // Send immediately for single characters, batch for rapid input
-                    if (data.length === 1) {
-                        // Single character - send with tiny delay to catch rapid typing
-                        sendTimeout = setTimeout(flushInput, 5);
-                    } else {
-                        // Multi-character paste or special keys - send immediately
-                        flushInput();
-                    }
+                    // Send each input immediately to preserve order
+                    socket.emit('terminal-input', data);
                 }
             });
 
